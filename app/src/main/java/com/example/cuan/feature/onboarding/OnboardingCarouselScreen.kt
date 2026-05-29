@@ -12,9 +12,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,21 +29,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.cuan.ui.components.PrimaryButtonComponent
-import com.example.cuan.ui.components.SecondaryButtonComponent
 import com.example.cuan.ui.theme.Background
 import com.example.cuan.ui.theme.BackgroundVariant
 import com.example.cuan.ui.theme.OnBackground
 import com.example.cuan.ui.theme.Secondary
+import com.example.cuan.ui.theme.SecondaryContainer
 import com.example.cuan.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
 
-/**
- * Onboarding Carousel - 3 slides introducing app features
- */
+// Onboarding Carousel - 3 slides introducing app features //
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnboardingCarouselScreen(
@@ -49,17 +52,17 @@ fun OnboardingCarouselScreen(
 
     val slides = listOf(
         CarouselSlide(
-            icon = android.R.drawable.ic_menu_edit,
+            icon = Icons.AutoMirrored.Filled.ReceiptLong,
             title = "Catat Setiap Transaksi",
             description = "Catat pemasukan dan pengeluaran dengan cepat, manual atau lewat scan struk"
         ),
         CarouselSlide(
-            icon = android.R.drawable.ic_menu_camera,
+            icon = Icons.Default.CameraAlt,
             title = "Scan Struk dan QRIS",
-            description = "Foto struk belanja atau screenshot QRIS, AI kami langsung mengenali Detailnya"
+            description = "Foto struk belanja atau screenshot QRIS, AI kami langsung mengenali detailnya"
         ),
         CarouselSlide(
-            icon = android.R.drawable.ic_menu_info_details,
+            icon = Icons.Default.BarChart,
             title = "Analitik Keuangan Cerdas",
             description = "Lihat grafik, deteksi pengeluaran tidak wajar, dan tanya langsung ke AI soal keuanganmu"
         )
@@ -82,18 +85,22 @@ fun OnboardingCarouselScreen(
             CarouselSlideContent(slide = slides[page])
         }
 
-        // Dot Indicators
+        // Dot Indicators with dynamic widths for a modern look
         Row(
             modifier = Modifier.padding(vertical = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             repeat(3) { index ->
+                val isActive = pagerState.currentPage == index
+                val indicatorWidth = if (isActive) 24.dp else 8.dp
                 Box(
                     modifier = Modifier
-                        .size(8.dp)
+                        .height(8.dp)
+                        .width(indicatorWidth)
                         .clip(CircleShape)
                         .background(
-                            if (pagerState.currentPage == index) Secondary
+                            if (isActive) Secondary
                             else BackgroundVariant
                         )
                 )
@@ -124,7 +131,7 @@ fun OnboardingCarouselScreen(
 }
 
 data class CarouselSlide(
-    val icon: Int, // Use drawable resource ID
+    val icon: ImageVector,
     val title: String,
     val description: String
 )
@@ -136,20 +143,29 @@ fun CarouselSlideContent(slide: CarouselSlide) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Icon (large, 64.dp)
-        Icon(
-            androidx.compose.ui.res.painterResource(slide.icon),
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = Secondary
-        )
+        // Icon wrapped in a beautifully padded secondary container circle
+        Box(
+            modifier = Modifier
+                .size(130.dp)
+                .clip(CircleShape)
+                .background(SecondaryContainer)
+                .padding(28.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = slide.icon,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                tint = Secondary
+            )
+        }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(36.dp))
 
         // Title
         Text(
             text = slide.title,
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
             color = OnBackground,
             textAlign = TextAlign.Center
         )
@@ -162,7 +178,7 @@ fun CarouselSlideContent(slide: CarouselSlide) {
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = 24.dp)
         )
     }
 }

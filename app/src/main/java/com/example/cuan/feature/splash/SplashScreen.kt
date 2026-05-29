@@ -1,5 +1,6 @@
 package com.example.cuan.feature.splash
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -53,12 +54,11 @@ fun SplashScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // App Logo (using placeholder - replace with actual drawable)
-        Icon(
-            painter = painterResource(id = android.R.drawable.ic_menu_compass),
+        // App Logo
+        Image(
+            painter = painterResource(id = com.example.cuan.R.drawable.cuone_splash),
             contentDescription = "CuOne Logo",
-            modifier = Modifier.size(80.dp),
-            tint = Secondary
+            modifier = Modifier.size(120.dp)
         )
 
         Spacer(modifier = Modifier.height(16.dp))

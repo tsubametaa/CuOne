@@ -37,32 +37,17 @@ class ScanViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessing = true, errorMessage = null) }
-
-            // In a real app, this would:
-            // 1. Use ML Kit to extract text from image
-            // 2. Send to OpenRouter for parsing
-            // For now, simulate with sample OCR text
             
             try {
-                // Simulated OCR result - in real app would use ML Kit
-                val sampleOcrText = """
-                    TOKO BETA MART
-                    Jln. Merdeka No. 123
-                    
-                    Item:
-                    Beras 5kg         Rp 65.000
-                    minyak Goreng     Rp 18.000
-                    Gula Pasir        Rp 12.000
-                    
-                    Total:           Rp 95.000
-                    
-                    28/05/2026 14:30
-                """.trimIndent()
-
+                val extractedText = OcrProcessor.extractText(context, uri)
+                if (extractedText.isBlank()) {
+                    throw Exception("Tidak ada teks terdeteksi pada gambar.")
+                }
+                
                 _uiState.update {
                     it.copy(
                         isProcessing = false,
-                        ocrText = sampleOcrText
+                        ocrText = extractedText
                     )
                 }
             } catch (e: Exception) {

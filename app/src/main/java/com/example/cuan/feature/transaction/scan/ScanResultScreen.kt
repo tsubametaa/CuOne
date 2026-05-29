@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +34,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -93,18 +95,24 @@ fun ScanResultScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Konfirmasi Hasil", color = OnSecondary) },
+                title = {
+                    Text(
+                        text = "Konfirmasi Hasil",
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        color = OnBackground
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
-                            tint = OnSecondary
+                            tint = OnBackground
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Secondary
+                    containerColor = Background
                 )
             )
         }
@@ -114,8 +122,9 @@ fun ScanResultScreen(
                 .fillMaxSize()
                 .background(Background)
                 .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Parsed Result Card
@@ -137,12 +146,15 @@ fun ScanResultScreen(
                     OutlinedTextField(
                         value = uiState.amount,
                         onValueChange = viewModel::updateAmount,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary),
                         label = { Text("Nominal") },
-                        prefix = { Text("Rp ") },
+                        prefix = { Text("Rp ", color = TextSecondary) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Secondary,
-                            unfocusedBorderColor = BackgroundVariant
+                            unfocusedBorderColor = BackgroundVariant,
+                            focusedTextColor = TextSecondary,
+                            unfocusedTextColor = TextSecondary
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -198,10 +210,13 @@ fun ScanResultScreen(
                     OutlinedTextField(
                         value = uiState.note,
                         onValueChange = viewModel::updateNote,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary),
                         label = { Text("Catatan") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Secondary,
-                            unfocusedBorderColor = BackgroundVariant
+                            unfocusedBorderColor = BackgroundVariant,
+                            focusedTextColor = TextSecondary,
+                            unfocusedTextColor = TextSecondary
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -210,11 +225,14 @@ fun ScanResultScreen(
                     OutlinedTextField(
                         value = uiState.date,
                         onValueChange = { },
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary),
                         label = { Text("Tanggal") },
                         readOnly = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Secondary,
-                            unfocusedBorderColor = BackgroundVariant
+                            unfocusedBorderColor = BackgroundVariant,
+                            focusedTextColor = TextSecondary,
+                            unfocusedTextColor = TextSecondary
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -38,6 +39,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -60,6 +62,7 @@ import com.example.cuan.ui.theme.OnBackground
 import com.example.cuan.ui.theme.OnSecondary
 import com.example.cuan.ui.theme.Secondary
 import com.example.cuan.ui.theme.SecondaryContainer
+import com.example.cuan.ui.theme.TextSecondary
 import com.example.cuan.ui.theme.SurfaceError
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -72,9 +75,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.automirrored.filled.Message
 
-/**
- * Free Text Input Screen (F-05)
- */
+// Free Text Input Screen (F-05) //
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FreeTextScreen(
@@ -94,18 +95,24 @@ fun FreeTextScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Input Teks", color = OnSecondary) },
+                title = {
+                    Text(
+                        text = "Input Teks",
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        color = OnBackground
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
-                            tint = OnSecondary
+                            tint = OnBackground
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Secondary
+                    containerColor = Background
                 )
             )
         }
@@ -115,6 +122,8 @@ fun FreeTextScreen(
                 .fillMaxSize()
                 .background(Background)
                 .padding(paddingValues)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -132,12 +141,15 @@ fun FreeTextScreen(
             OutlinedTextField(
                 value = uiState.inputText,
                 onValueChange = viewModel::updateInputText,
-                placeholder = { Text("Contoh: tadi beli kopi 35rb, atau terima gaji 5 juta") },
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary),
+                placeholder = { Text("Contoh: tadi beli kopi 35rb, atau terima gaji 5 juta", color = TextSecondary.copy(alpha = 0.6f)) },
                 minLines = 3,
                 maxLines = 6,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Secondary,
-                    unfocusedBorderColor = BackgroundVariant
+                    unfocusedBorderColor = BackgroundVariant,
+                    focusedTextColor = TextSecondary,
+                    unfocusedTextColor = TextSecondary
                 ),
                 modifier = Modifier
                     .fillMaxWidth()

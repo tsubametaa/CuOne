@@ -48,6 +48,9 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     AppNavGraph(
                         navController = navController,
+                        modifier = Modifier.padding(
+                            top = innerPadding.calculateTopPadding()
+                        ),
                         startDestination = "splash"
                     )
                 }

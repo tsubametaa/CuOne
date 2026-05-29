@@ -19,9 +19,7 @@ import javax.inject.Singleton
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "c_one_prefs")
 
-/**
- * DataStore keys for CuOne app preferences
- */
+// DataStore keys for CuOne app preferences //
 object DataStoreKeys {
     // Onboarding
     val USER_NAME = stringPreferencesKey("user_name")

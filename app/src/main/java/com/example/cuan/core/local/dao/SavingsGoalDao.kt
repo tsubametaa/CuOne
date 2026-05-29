@@ -9,9 +9,7 @@ import androidx.room.Update
 import com.example.cuan.core.local.entity.SavingsGoalEntity
 import kotlinx.coroutines.flow.Flow
 
-/**
- * DAO for savings goal operations
- */
+ // DAO for savings goal operations //
 @Dao
 interface SavingsGoalDao {
 

@@ -1,9 +1,12 @@
 package com.example.cuan.feature.onboarding
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +26,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -63,17 +67,8 @@ fun OnboardingNameScreen(
             TopAppBar(
                 title = { },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Secondary
-                ),
-                navigationIcon = {
-                    IconButton(onClick = { /* Can't go back in onboarding */ }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
-                            tint = Secondary // Will be changed to OnSecondary via content
-                        )
-                    }
-                }
+                    containerColor = Background
+                )
             )
         }
     ) { paddingValues ->
@@ -82,6 +77,8 @@ fun OnboardingNameScreen(
                 .fillMaxSize()
                 .background(Background)
                 .padding(paddingValues)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             verticalArrangement = Arrangement.Center
         ) {
@@ -127,11 +124,14 @@ fun OnboardingNameScreen(
                         viewModel.saveName()
                     }
                 ),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Secondary,
                     unfocusedBorderColor = BackgroundVariant,
                     focusedLabelColor = Secondary,
-                    cursorColor = Secondary
+                    cursorColor = Secondary,
+                    focusedTextColor = TextSecondary,
+                    unfocusedTextColor = TextSecondary
                 ),
                 modifier = Modifier.fillMaxWidth()
             )

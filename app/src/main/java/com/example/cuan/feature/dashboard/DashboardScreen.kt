@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -59,6 +60,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.cuan.core.utils.CurrencyUtils
 import com.example.cuan.core.utils.DateUtils
 import com.example.cuan.data.model.Transaction
+import com.example.cuan.feature.dashboard.components.DashboardActionButtons
+import com.example.cuan.feature.dashboard.components.ExpenseCategoryChartCard
+import com.example.cuan.feature.dashboard.components.WeeklyAnalysisChartCard
 import com.example.cuan.ui.theme.Accent
 import com.example.cuan.ui.theme.Background
 import com.example.cuan.ui.theme.BackgroundVariant
@@ -70,9 +74,7 @@ import com.example.cuan.ui.theme.SecondaryContainer
 import com.example.cuan.ui.theme.SurfaceError
 import com.example.cuan.ui.theme.TextSecondary
 
-/**
- * Dashboard Screen - Main home screen (F-02)
- */
+// Dashboard Screen - Main home screen (F-02) //
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
@@ -94,13 +96,13 @@ fun DashboardScreen(
                         Text(
                             text = "Halo, ${uiState.userName}",
                             style = MaterialTheme.typography.headlineSmall,
-                            color = OnSecondary,
+                            color = OnBackground,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = DateUtils.todayFormatted(),
                             style = MaterialTheme.typography.bodySmall,
-                            color = OnSecondary.copy(alpha = 0.8f)
+                            color = TextSecondary
                         )
                     }
                 },
@@ -109,18 +111,19 @@ fun DashboardScreen(
                         Icon(
                             Icons.Default.Notifications,
                             contentDescription = "Notifications",
-                            tint = OnSecondary
+                            tint = Secondary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Secondary
+                    containerColor = Background
                 )
             )
         },
         floatingActionButton = {
             Column(
-                horizontalAlignment = Alignment.End
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.padding(bottom = 76.dp)
             ) {
                 // Mini FABs (shown when expanded)
                 AnimatedVisibility(visible = showFabMenu) {
@@ -176,7 +179,8 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .background(Background)
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Profile Incomplete Banner (conditional)
@@ -210,6 +214,30 @@ fun DashboardScreen(
                         onDismiss = { viewModel.dismissAnomaly() }
                     )
                 }
+            }
+
+            // Charts
+            if (uiState.weeklyData.isNotEmpty()) {
+                item {
+                    WeeklyAnalysisChartCard(data = uiState.weeklyData)
+                }
+            }
+
+            if (uiState.categoryData.isNotEmpty()) {
+                item {
+                    ExpenseCategoryChartCard(
+                        totalAmountStr = "Rp 1,1jt",
+                        data = uiState.categoryData
+                    )
+                }
+            }
+
+            // Export Buttons
+            item {
+                DashboardActionButtons(
+                    onExportPdfClick = { /* TODO */ },
+                    onSpreadsheetClick = { /* TODO */ }
+                )
             }
 
             // Recent Transactions
@@ -259,31 +287,42 @@ fun ProfileIncompleteBanner(onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = SurfaceError
+            containerColor = Color.White
         ),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                Icons.Default.Warning,
-                contentDescription = null,
-                tint = Accent,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Accent.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = Accent,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Lengkapi profil untuk pengalaman terbaik",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "Lengkapi Profil Anda",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
                     color = OnBackground
                 )
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Pekerjaan dan koneksi Sheets belum diisi",
+                    text = "Data pekerjaan dan koneksi Sheets belum terisi untuk sinkronisasi.",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary
                 )
@@ -468,8 +507,9 @@ fun RecentTransactions(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = BackgroundVariant),
-        shape = RoundedCornerShape(12.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -524,23 +564,24 @@ fun RecentTransactions(
 @Composable
 fun TransactionItem(transaction: Transaction) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Category icon placeholder
+        val isIncome = transaction.type == com.example.cuan.data.model.TransactionType.INCOME
         Box(
             modifier = Modifier
-                .size(36.dp)
+                .size(44.dp)
                 .clip(CircleShape)
-                .background(SecondaryContainer),
+                .background(if (isIncome) IncomeGreen.copy(alpha = 0.1f) else Accent.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                if (transaction.type == com.example.cuan.data.model.TransactionType.INCOME)
-                    Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                if (isIncome) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                 contentDescription = null,
-                tint = Secondary,
-                modifier = Modifier.size(18.dp)
+                tint = if (isIncome) IncomeGreen else Accent,
+                modifier = Modifier.size(22.dp)
             )
         }
 

@@ -20,17 +20,21 @@ import com.example.cuan.feature.transaction.freetext.FreeTextScreen
 import com.example.cuan.feature.transaction.list.TransactionListScreen
 import com.example.cuan.feature.transaction.scan.ScanScreen
 
+import androidx.compose.ui.Modifier
+
 /**
  * Navigation graph for CuOne app
  */
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
+    modifier: Modifier = Modifier,
     startDestination: String = AppRoute.Splash.route
 ) {
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = startDestination,
+        modifier = modifier
     ) {
         // Splash Screen
         composable(AppRoute.Splash.route) {

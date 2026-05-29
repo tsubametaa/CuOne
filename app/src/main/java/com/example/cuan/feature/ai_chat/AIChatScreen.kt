@@ -2,37 +2,17 @@ package com.example.cuan.feature.ai_chat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -41,30 +21,34 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.cuan.ui.theme.Accent
+import com.example.cuan.feature.ai_chat.components.ChatBubbleComponent
+import com.example.cuan.feature.ai_chat.components.ChatInputBarComponent
+import com.example.cuan.feature.ai_chat.components.SuggestedQuestionsComponent
 import com.example.cuan.ui.theme.Background
-import com.example.cuan.ui.theme.BackgroundVariant
 import com.example.cuan.ui.theme.OnBackground
-import com.example.cuan.ui.theme.OnSecondary
 import com.example.cuan.ui.theme.Secondary
-import com.example.cuan.ui.theme.SecondaryContainer
 import com.example.cuan.ui.theme.TextSecondary
 
 /**
- * AI Chat Screen (F-08)
+ * AI Chat Screen (F-08) - Minimalist & Professional redesign.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AIChatScreen(
     viewModel: AIChatViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
+
+    val isKeyboardVisible = WindowInsets.isImeVisible
+    val bottomPadding = if (isKeyboardVisible) 0.dp else 80.dp
 
     // Auto-scroll to bottom on new messages
     LaunchedEffect(uiState.messages.size) {
@@ -78,16 +62,22 @@ fun AIChatScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Asisten AI", color = OnSecondary)
                         Text(
-                            "Didukung Nemotron",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = OnSecondary.copy(alpha = 0.7f)
+                            text = "Asisten AI", 
+                            color = OnBackground,
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Text(
+                            text = "Didukung Nemotron",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextSecondary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Secondary
+                    containerColor = Background
                 )
             )
         }
@@ -111,7 +101,7 @@ fun AIChatScreen(
                 // Show suggested questions only when chat is empty
                 if (uiState.messages.isEmpty()) {
                     item {
-                        SuggestedQuestions(
+                        SuggestedQuestionsComponent(
                             questions = uiState.suggestedQuestions,
                             onQuestionClick = viewModel::sendMessage
                         )
@@ -120,7 +110,7 @@ fun AIChatScreen(
 
                 // Chat messages
                 items(uiState.messages) { message ->
-                    ChatBubble(
+                    ChatBubbleComponent(
                         message = message.text,
                         isFromUser = message.isFromUser,
                         isLoading = message.isLoading
@@ -129,142 +119,13 @@ fun AIChatScreen(
             }
 
             // Input bar
-            ChatInputBar(
+            ChatInputBarComponent(
                 inputText = uiState.inputText,
                 onInputChange = viewModel::updateInput,
                 onSendClick = viewModel::sendMessage,
-                isLoading = uiState.isLoading
+                isLoading = uiState.isLoading,
+                modifier = Modifier.padding(bottom = bottomPadding)
             )
         }
     }
 }
-
-@Composable
-fun SuggestedQuestions(
-    questions: List<String>,
-    onQuestionClick: (String) -> Unit
-) {
-    Column {
-        Text(
-            text = "Pertanyaan Saran",
-            style = MaterialTheme.typography.labelMedium,
-            color = TextSecondary,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(questions) { question ->
-                FilterChip(
-                    selected = false,
-                    onClick = { onQuestionClick(question) },
-                    label = { Text(question, style = MaterialTheme.typography.bodySmall) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = SecondaryContainer,
-                        labelColor = OnBackground
-                    )
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun ChatBubble(
-    message: String,
-    isFromUser: Boolean,
-    isLoading: Boolean = false
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (isFromUser) Alignment.End else Alignment.Start
-    ) {
-        Card(
-            modifier = Modifier.widthIn(max = 280.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isFromUser) Secondary else BackgroundVariant
-            ),
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isFromUser) 16.dp else 4.dp,
-                bottomEnd = if (isFromUser) 4.dp else 16.dp
-            )
-        ) {
-            if (isLoading) {
-                // Loading dots animation placeholder
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    repeat(3) { index ->
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(TextSecondary.copy(alpha = 0.5f))
-                        )
-                    }
-                }
-            } else {
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isFromUser) OnSecondary else OnBackground,
-                    modifier = Modifier.padding(12.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun ChatInputBar(
-    inputText: String,
-    onInputChange: (String) -> Unit,
-    onSendClick: () -> Unit,
-    isLoading: Boolean
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Background)
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        OutlinedTextField(
-            value = inputText,
-            onValueChange = onInputChange,
-            placeholder = { Text("Tanyakan tentang keuangan...") },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Secondary,
-                unfocusedBorderColor = BackgroundVariant,
-                focusedContainerColor = BackgroundVariant,
-                unfocusedContainerColor = BackgroundVariant
-            ),
-            shape = RoundedCornerShape(24.dp),
-            modifier = Modifier.weight(1f),
-            enabled = !isLoading
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        IconButton(
-            onClick = onSendClick,
-            enabled = inputText.isNotEmpty() && !isLoading,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(if (inputText.isNotEmpty()) Accent else BackgroundVariant)
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.Send,
-                contentDescription = "Kirim",
-                tint = if (inputText.isNotEmpty()) OnAccent else TextSecondary
-            )
-        }
-    }
-}
-
-private val OnAccent = com.example.cuan.ui.theme.OnAccent

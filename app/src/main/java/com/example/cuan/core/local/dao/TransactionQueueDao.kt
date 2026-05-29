@@ -9,9 +9,7 @@ import androidx.room.Update
 import com.example.cuan.core.local.entity.OfflineTransactionEntity
 import kotlinx.coroutines.flow.Flow
 
-/**
- * DAO for transaction queue operations
- */
+// DAO for transaction queue operations //
 @Dao
 interface TransactionQueueDao {
 

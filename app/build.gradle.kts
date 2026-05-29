@@ -87,6 +87,9 @@ dependencies {
     // Image Loading
     implementation(libs.coil.compose)
 
+    // ML Kit
+    implementation(libs.play.services.mlkit.text.recognition)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 

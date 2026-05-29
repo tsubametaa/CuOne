@@ -37,9 +37,11 @@ object TransactionCategories {
         "Makan",
         "Transport",
         "Belanja",
-        "Hiburan",
         "Kesehatan",
+        "Pendidikan",
+        "Hiburan",
         "Tagihan",
+        "Rumah",
         "Lainnya"
     )
 
