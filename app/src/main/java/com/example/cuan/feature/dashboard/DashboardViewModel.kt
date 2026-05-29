@@ -1,9 +1,11 @@
 package com.example.cuan.feature.dashboard
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cuan.core.local.AppDataStore
 import com.example.cuan.core.utils.DateUtils
+import com.example.cuan.core.utils.PdfGenerator
 import com.example.cuan.data.model.Transaction
 import com.example.cuan.data.model.TransactionType
 import com.example.cuan.data.repository.TransactionRepository
@@ -14,9 +16,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.YearMonth
 import javax.inject.Inject
 
 data class DashboardUiState(
@@ -28,13 +32,16 @@ data class DashboardUiState(
     val weeklyData: List<DailyChartData> = emptyList(),
     val categoryData: List<CategoryChartData> = emptyList(),
     val anomalyMessage: String? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val sheetsUrl: String = "",
+    val dailyReminderEnabled: Boolean = false
 )
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val appDataStore: AppDataStore,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val syncManager: com.example.cuan.core.sync.SyncManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -48,7 +55,7 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            // Load user data
+            // Load user name
             appDataStore.userName.collect { name ->
                 _uiState.update { it.copy(userName = name) }
             }
@@ -57,6 +64,18 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             appDataStore.isProfileComplete.collect { complete ->
                 _uiState.update { it.copy(isProfileComplete = complete) }
+            }
+        }
+
+        viewModelScope.launch {
+            appDataStore.sheetsUrl.collect { url ->
+                _uiState.update { it.copy(sheetsUrl = url) }
+            }
+        }
+
+        viewModelScope.launch {
+            appDataStore.dailyReminderEnabled.collect { enabled ->
+                _uiState.update { it.copy(dailyReminderEnabled = enabled) }
             }
         }
 
@@ -70,84 +89,32 @@ class DashboardViewModel @Inject constructor(
     }
 
     private fun generateTransactionsWithRealData(realTransactions: List<Transaction>) {
-        val now = DateUtils.nowMillis()
-        val today = LocalDate.now()
+        val currentMonth = YearMonth.now()
+        val currentMonthTransactions = realTransactions.filter { tx ->
+            YearMonth.from(tx.date) == currentMonth
+        }
 
-        val sampleTransactions = listOf(
-            Transaction(
-                id = "1",
-                amount = 5000000,
-                type = TransactionType.INCOME,
-                category = "Gaji",
-                note = "Gaji bulan Mei",
-                date = today.minusDays(1),
-                timeMillis = now - 86400000,
-                source = com.example.cuan.data.model.TransactionSource.MANUAL,
-                isSynced = true
-            ),
-            Transaction(
-                id = "2",
-                amount = 150000,
-                type = TransactionType.EXPENSE,
-                category = "Makan",
-                note = "Makan siang di mall",
-                date = today,
-                timeMillis = now,
-                source = com.example.cuan.data.model.TransactionSource.MANUAL,
-                isSynced = true
-            ),
-            Transaction(
-                id = "3",
-                amount = 50000,
-                type = TransactionType.EXPENSE,
-                category = "Transport",
-                note = "Grab ke kantor",
-                date = today,
-                timeMillis = now - 3600000,
-                source = com.example.cuan.data.model.TransactionSource.MANUAL,
-                isSynced = true
-            ),
-            Transaction(
-                id = "4",
-                amount = 250000,
-                type = TransactionType.EXPENSE,
-                category = "Belanja",
-                note = "Belanja groceries",
-                date = today.minusDays(2),
-                timeMillis = now - 172800000,
-                source = com.example.cuan.data.model.TransactionSource.SCAN,
-                isSynced = true
-            ),
-            Transaction(
-                id = "5",
-                amount = 75000,
-                type = TransactionType.EXPENSE,
-                category = "Hiburan",
-                note = "Nonton film",
-                date = today.minusDays(3),
-                timeMillis = now - 259200000,
-                source = com.example.cuan.data.model.TransactionSource.MANUAL,
-                isSynced = true
-            )
-        )
-
-        // Merge real database transactions with sample transactions (avoid duplicate IDs)
-        val combinedTransactions = (realTransactions + sampleTransactions).distinctBy { it.id }
-            .sortedByDescending { it.timeMillis }
-
-        val totalIncome = combinedTransactions
+        val totalIncome = currentMonthTransactions
             .filter { it.type == TransactionType.INCOME }
             .sumOf { it.amount }
-        val totalExpense = combinedTransactions
+        val totalExpense = currentMonthTransactions
             .filter { it.type == TransactionType.EXPENSE }
             .sumOf { it.amount }
 
-        // Weekly breakdown: map transactions to Mon-Sun
+        // Weekly breakdown: map transactions to Mon-Sun of current week
         val daysOfWeek = listOf("Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min")
         val weeklyIncomeMap = daysOfWeek.associateWith { 0f }.toMutableMap()
         val weeklyExpenseMap = daysOfWeek.associateWith { 0f }.toMutableMap()
 
-        combinedTransactions.forEach { tx ->
+        val today = LocalDate.now()
+        val startOfWeek = today.minusDays((today.dayOfWeek.value - 1).toLong())
+        val endOfWeek = startOfWeek.plusDays(6)
+
+        val currentWeekTransactions = realTransactions.filter { tx ->
+            !tx.date.isBefore(startOfWeek) && !tx.date.isAfter(endOfWeek)
+        }
+
+        currentWeekTransactions.forEach { tx ->
             val dayName = when (tx.date.dayOfWeek.value) {
                 1 -> "Sen"
                 2 -> "Sel"
@@ -170,8 +137,8 @@ class DashboardViewModel @Inject constructor(
             DailyChartData(day, weeklyIncomeMap[day] ?: 0f, weeklyExpenseMap[day] ?: 0f)
         }
 
-        // Category breakdown for expenses
-        val expenseTransactions = combinedTransactions.filter { it.type == TransactionType.EXPENSE }
+        // Category breakdown for expenses of current month
+        val expenseTransactions = currentMonthTransactions.filter { it.type == TransactionType.EXPENSE }
         val totalExpenseSum = expenseTransactions.sumOf { it.amount }.toFloat()
 
         val dynamicCategoryData = if (totalExpenseSum > 0) {
@@ -185,17 +152,12 @@ class DashboardViewModel @Inject constructor(
                 )
             }
         } else {
-            listOf(
-                CategoryChartData("Makan", 45f, CategoryColors[0]),
-                CategoryChartData("Transport", 20f, CategoryColors[1]),
-                CategoryChartData("Belanja", 15f, CategoryColors[2]),
-                CategoryChartData("Kesehatan", 10f, CategoryColors[3])
-            )
+            emptyList()
         }
 
         _uiState.update { state ->
             state.copy(
-                recentTransactions = combinedTransactions.take(8),
+                recentTransactions = realTransactions.take(8),
                 totalIncome = totalIncome,
                 totalExpense = totalExpense,
                 weeklyData = dynamicWeeklyData,
@@ -222,5 +184,49 @@ class DashboardViewModel @Inject constructor(
 
     fun refreshData() {
         loadData()
+        viewModelScope.launch {
+            syncManager.syncPendingTransactions()
+        }
+    }
+
+    fun exportPdf(context: Context) {
+        viewModelScope.launch {
+            val transactions = transactionRepository.getAllTransactions().first()
+            PdfGenerator.export(context, transactions)
+        }
+    }
+
+    fun syncAndOpenSpreadsheet(context: Context) {
+        viewModelScope.launch {
+            if (_uiState.value.sheetsUrl.isEmpty()) {
+                android.widget.Toast.makeText(context, "Spreadsheet URL belum diatur di Profil Anda.", android.widget.Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            android.widget.Toast.makeText(context, "Sinkronisasi ke Google Sheets...", android.widget.Toast.LENGTH_SHORT).show()
+            val result = syncManager.syncPendingTransactions()
+            result.fold(
+                onSuccess = { success ->
+                    if (success) {
+                        android.widget.Toast.makeText(context, "Sinkronisasi berhasil!", android.widget.Toast.LENGTH_SHORT).show()
+                    } else {
+                        android.widget.Toast.makeText(context, "Tidak ada transaksi baru untuk disinkronkan.", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    openSpreadsheetUrl(context)
+                },
+                onFailure = { e ->
+                    android.widget.Toast.makeText(context, "Gagal sinkronisasi: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                    openSpreadsheetUrl(context)
+                }
+            )
+        }
+    }
+
+    private fun openSpreadsheetUrl(context: Context) {
+        try {
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(_uiState.value.sheetsUrl))
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(context, "Gagal membuka link spreadsheet.", android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 }

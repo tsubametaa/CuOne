@@ -9,6 +9,7 @@ import com.example.cuan.data.model.TransactionSource
 import com.example.cuan.data.model.TransactionType
 import com.example.cuan.data.repository.AIRepository
 import com.example.cuan.data.repository.TransactionRepository
+import com.example.cuan.core.sync.SyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
@@ -29,23 +31,44 @@ data class ScanResultUiState(
     val note: String = "",
     val date: String = DateUtils.todayFormatted(),
     val dateMillis: Long = System.currentTimeMillis(),
+    val hour: Int = LocalTime.now().hour,
+    val minute: Int = LocalTime.now().minute,
+    val time: String = formatTime(LocalTime.now().hour, LocalTime.now().minute),
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
     val hasUndetectedFields: Boolean = false,
     val errorMessage: String? = null
-)
+) {
+    companion object {
+        fun formatTime(hour: Int, minute: Int): String {
+            val amPm = if (hour < 12) "AM" else "PM"
+            val displayHour = when {
+                hour == 0 -> 12
+                hour > 12 -> hour - 12
+                else -> hour
+            }
+            return String.format(java.util.Locale.US, "%02d:%02d %s", displayHour, minute, amPm)
+        }
+    }
+}
 
 @HiltViewModel
 class ScanResultViewModel @Inject constructor(
     private val appDataStore: AppDataStore,
     private val aiRepository: AIRepository,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ScanResultUiState())
     val uiState: StateFlow<ScanResultUiState> = _uiState.asStateFlow()
 
+    private var hasParsed = false
+
     fun parseOcrText(ocrText: String) {
+        if (ocrText.isBlank() || hasParsed) return
+        hasParsed = true
+
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
@@ -110,6 +133,29 @@ class ScanResultViewModel @Inject constructor(
         _uiState.update { it.copy(note = note) }
     }
 
+    fun updateDate(millis: Long) {
+        val date = Instant.ofEpochMilli(millis)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+        
+        _uiState.update { state ->
+            state.copy(
+                dateMillis = millis,
+                date = DateUtils.formatDate(date)
+            )
+        }
+    }
+
+    fun updateTime(hour: Int, minute: Int) {
+        _uiState.update { state ->
+            state.copy(
+                hour = hour,
+                minute = minute,
+                time = ScanResultUiState.formatTime(hour, minute)
+            )
+        }
+    }
+
     fun saveTransaction() {
         val state = _uiState.value
         
@@ -131,6 +177,11 @@ class ScanResultViewModel @Inject constructor(
                     .atZone(ZoneId.systemDefault())
                     .toLocalDate()
 
+                val combinedTimeMillis = date.atTime(state.hour, state.minute)
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+
                 val transaction = Transaction(
                     id = UUID.randomUUID().toString(),
                     amount = state.amount.toLongOrNull() ?: 0L,
@@ -138,12 +189,17 @@ class ScanResultViewModel @Inject constructor(
                     category = state.category,
                     note = state.note,
                     date = date,
-                    timeMillis = System.currentTimeMillis(),
+                    timeMillis = combinedTimeMillis,
                     source = TransactionSource.SCAN,
                     isSynced = false
                 )
                 
                 transactionRepository.insertTransaction(transaction)
+
+                viewModelScope.launch {
+                    syncManager.syncPendingTransactions()
+                }
+
                 _uiState.update { it.copy(isLoading = false, isSaved = true) }
             } catch (e: Exception) {
                 _uiState.update { 

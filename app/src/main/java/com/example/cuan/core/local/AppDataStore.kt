@@ -39,6 +39,7 @@ object DataStoreKeys {
 
     // AI
     val OPENROUTER_API_KEY = stringPreferencesKey("openrouter_api_key")
+    val GOOGLE_ACCESS_TOKEN = stringPreferencesKey("google_access_token")
 
     // Notifikasi & preferensi
     val DAILY_REMINDER_ENABLED = booleanPreferencesKey("daily_reminder_enabled")
@@ -95,6 +96,7 @@ class AppDataStore @Inject constructor(
     val sheetsId: Flow<String> = dataStore.data.map { it[DataStoreKeys.SHEETS_ID] ?: "" }
     val isSheetsConnected: Flow<Boolean> = dataStore.data.map { it[DataStoreKeys.IS_SHEETS_CONNECTED] ?: false }
     val lastSyncAt: Flow<Long> = dataStore.data.map { it[DataStoreKeys.LAST_SYNC_AT] ?: 0L }
+    val googleAccessToken: Flow<String> = dataStore.data.map { it[DataStoreKeys.GOOGLE_ACCESS_TOKEN] ?: "" }
 
     suspend fun saveSheetsUrl(url: String) {
         dataStore.edit { it[DataStoreKeys.SHEETS_URL] = url }
@@ -110,6 +112,10 @@ class AppDataStore @Inject constructor(
 
     suspend fun setLastSyncAt(timestamp: Long) {
         dataStore.edit { it[DataStoreKeys.LAST_SYNC_AT] = timestamp }
+    }
+
+    suspend fun saveGoogleAccessToken(token: String) {
+        dataStore.edit { it[DataStoreKeys.GOOGLE_ACCESS_TOKEN] = token }
     }
 
     // ========== AI ==========

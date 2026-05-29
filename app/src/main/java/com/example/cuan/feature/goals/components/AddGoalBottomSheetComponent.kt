@@ -19,6 +19,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.cuan.core.utils.IndonesianCurrencyVisualTransformation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -105,6 +108,8 @@ fun AddGoalBottomSheetComponent(
             onValueChange = { targetAmount = it.filter { c -> c.isDigit() } },
             label = { Text("Nominal Target") },
             prefix = { Text("Rp ") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            visualTransformation = IndonesianCurrencyVisualTransformation(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Secondary,
                 unfocusedBorderColor = BackgroundVariant,
@@ -120,6 +125,8 @@ fun AddGoalBottomSheetComponent(
             onValueChange = { currentAmount = it.filter { c -> c.isDigit() } },
             label = { Text("Sudah Ditabung (Opsional)") },
             prefix = { Text("Rp ") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            visualTransformation = IndonesianCurrencyVisualTransformation(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Secondary,
                 unfocusedBorderColor = BackgroundVariant,

@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.cuan.ui.theme.BackgroundVariant
 import com.example.cuan.ui.theme.OnBackground
 import com.example.cuan.ui.theme.OnSecondary
@@ -110,7 +111,7 @@ fun ChatBubbleComponent(
                     style = MaterialTheme.typography.bodyMedium,
                     color = contentColor,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f
+                    lineHeight = 20.sp
                 )
             }
         }

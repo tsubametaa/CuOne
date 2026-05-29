@@ -5,6 +5,8 @@ import com.example.cuan.core.network.OpenRouterApiService
 import com.example.cuan.core.network.OpenRouterRequest
 import com.example.cuan.core.network.OpenRouterResponse
 import com.example.cuan.data.model.TransactionType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -22,9 +24,7 @@ private data class SerializableParsedTransaction(
     val date: String = ""
 )
 
-/**
- * Implementation of AIRepository using OpenRouter API with local regex fallback
- */
+// Implementation of AIRepository using OpenRouter API with local regex fallback //
 class AIRepositoryImpl @Inject constructor(
     private val openRouterApiService: OpenRouterApiService
 ) : AIRepository {
@@ -32,6 +32,49 @@ class AIRepositoryImpl @Inject constructor(
     private val jsonParser = Json { 
         ignoreUnknownKeys = true
         coerceInputValues = true
+    }
+
+    private val fallbackModels = listOf(
+        "openai/gpt-oss-120b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-30b-a3b:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
+    )
+
+    private suspend fun callOpenRouterWithFallback(
+        messages: List<ChatMessage>,
+        apiKey: String,
+        temperature: Float = 0.3f
+    ): String = withContext(Dispatchers.IO) {
+        var lastException: Exception? = null
+        val authorizationHeader = "Bearer $apiKey"
+        
+        for (model in fallbackModels) {
+            try {
+                val request = OpenRouterRequest(
+                    model = model,
+                    messages = messages,
+                    temperature = temperature
+                )
+                val jsonString = jsonParser.encodeToString(OpenRouterRequest.serializer(), request)
+                val requestBody = jsonString.toRequestBody("application/json".toMediaType())
+                
+                val responseBody = openRouterApiService.getChatCompletion(
+                    authorizationHeader = authorizationHeader,
+                    request = requestBody
+                )
+                
+                val responseString = responseBody.string()
+                val openRouterResponse = jsonParser.decodeFromString<OpenRouterResponse>(responseString)
+                val content = openRouterResponse.choices.firstOrNull()?.message?.content?.trim()
+                if (content != null) {
+                    return@withContext content
+                }
+            } catch (e: Exception) {
+                lastException = e
+            }
+        }
+        throw lastException ?: Exception("Gagal menghubungi layanan AI (Semua model sibuk atau API Key salah)")
     }
 
     override suspend fun parseReceipt(ocrText: String, apiKey: String): Result<ParsedTransaction> {
@@ -58,25 +101,11 @@ class AIRepositoryImpl @Inject constructor(
                 $ocrText
             """.trimIndent()
 
-            val request = OpenRouterRequest(
-                messages = listOf(
-                    ChatMessage(role = "user", content = prompt)
-                )
+            val assistantContent = callOpenRouterWithFallback(
+                messages = listOf(ChatMessage(role = "user", content = prompt)),
+                apiKey = apiKey,
+                temperature = 0.1f
             )
-
-            val jsonString = jsonParser.encodeToString(OpenRouterRequest.serializer(), request)
-            val requestBody = jsonString.toRequestBody("application/json".toMediaType())
-
-            val authorizationHeader = "Bearer $apiKey"
-            val responseBody = openRouterApiService.getChatCompletion(
-                authorizationHeader = authorizationHeader,
-                request = requestBody
-            )
-            
-            val responseString = responseBody.string()
-            val openRouterResponse = jsonParser.decodeFromString<OpenRouterResponse>(responseString)
-            val assistantContent = openRouterResponse.choices.firstOrNull()?.message?.content?.trim() 
-                ?: throw Exception("Empty response from AI")
 
             // Clean markdown blocks if LLM output contains them
             val cleanedJson = assistantContent
@@ -115,6 +144,95 @@ class AIRepositoryImpl @Inject constructor(
             } catch (fallbackEx: Exception) {
                 Result.failure(e)
             }
+        }
+    }
+
+    override suspend fun parseFreeText(text: String, apiKey: String): Result<ParsedTransaction> {
+        if (apiKey.isBlank()) {
+            return try {
+                Result.success(parseReceiptLocalFallback(text))
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+        return try {
+            val todayStr = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+            val prompt = """
+                Parse transaksi keuangan dari teks berikut. Return HANYA JSON valid (tanpa backtick atau markdown block):
+                {
+                  "amount": <integer Rupiah, e.g. 50000, tanpa sen atau titik>,
+                  "type": "EXPENSE" atau "INCOME",
+                  "category": "<satu dari: Makan|Transport|Belanja|Hiburan|Kesehatan|Tagihan|Gaji|Freelance|Lainnya>",
+                  "date": "<YYYY-MM-DD, gunakan hari ini jika tidak disebutkan atau tidak ditemukan: $todayStr>",
+                  "note": "<ringkasan singkat atau nama merchant, e.g. Starbucks>"
+                }
+                
+                Teks: $text
+            """.trimIndent()
+
+            val assistantContent = callOpenRouterWithFallback(
+                messages = listOf(ChatMessage(role = "user", content = prompt)),
+                apiKey = apiKey,
+                temperature = 0.1f
+            )
+
+            val cleanedJson = assistantContent
+                .removePrefix("```json")
+                .removePrefix("```")
+                .removeSuffix("```")
+                .trim()
+
+            val serializableResult = jsonParser.decodeFromString<SerializableParsedTransaction>(cleanedJson)
+            
+            val transactionType = try {
+                TransactionType.valueOf(serializableResult.type.uppercase())
+            } catch (e: Exception) {
+                TransactionType.EXPENSE
+            }
+
+            val dateParsed = try {
+                LocalDate.parse(serializableResult.date, DateTimeFormatter.ISO_LOCAL_DATE)
+            } catch (e: Exception) {
+                LocalDate.now()
+            }
+
+            Result.success(
+                ParsedTransaction(
+                    amount = serializableResult.amount,
+                    type = transactionType,
+                    category = serializableResult.category,
+                    note = serializableResult.note,
+                    date = dateParsed
+                )
+            )
+        } catch (e: Exception) {
+            try {
+                Result.success(parseReceiptLocalFallback(text))
+            } catch (fallbackEx: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    override suspend fun chatWithFinance(
+        prompt: String,
+        history: List<ChatMessage>,
+        apiKey: String
+    ): Result<String> {
+        if (apiKey.isBlank()) {
+            return Result.failure(Exception("API Key tidak boleh kosong. Harap lengkapi di halaman Profil."))
+        }
+
+        return try {
+            val response = callOpenRouterWithFallback(
+                messages = history + ChatMessage(role = "user", content = prompt),
+                apiKey = apiKey,
+                temperature = 0.7f
+            )
+            Result.success(response)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -189,7 +190,7 @@ fun AddTransactionScreen(
                     onClick = { viewModel.saveTransaction() },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = uiState.amount.isNotEmpty() && uiState.category.isNotEmpty() && !uiState.isLoading,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = buttonColor,
                         contentColor = buttonOnColor,

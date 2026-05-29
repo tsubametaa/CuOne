@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.TrackChanges
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -55,7 +56,7 @@ fun BottomNavBarComponent(
     val items = listOf(
         BottomNavItem.Dashboard,
         BottomNavItem.Analytics,
-        BottomNavItem.AIChat,
+        BottomNavItem.Scan,
         BottomNavItem.Goals,
         BottomNavItem.Settings
     )
@@ -67,7 +68,7 @@ fun BottomNavBarComponent(
     val showBottomNav = currentRoute in listOf(
         AppRoute.Dashboard.route,
         AppRoute.Analytics.route,
-        AppRoute.AIChat.route,
+        AppRoute.Scan.route,
         AppRoute.Goals.route,
         AppRoute.Settings.route
     )
@@ -144,7 +145,7 @@ fun BottomNavBarComponent(
                         val iconPair = when (item) {
                             BottomNavItem.Dashboard -> Icons.Default.Home to Icons.Outlined.Home
                             BottomNavItem.Analytics -> Icons.Default.BarChart to Icons.Outlined.BarChart
-                            BottomNavItem.AIChat -> Icons.AutoMirrored.Filled.Chat to Icons.AutoMirrored.Outlined.Chat
+                            BottomNavItem.Scan -> Icons.AutoMirrored.Filled.ReceiptLong to Icons.AutoMirrored.Filled.ReceiptLong
                             BottomNavItem.Goals -> Icons.Default.TrackChanges to Icons.Outlined.TrackChanges
                             BottomNavItem.Settings -> Icons.Default.Settings to Icons.Outlined.Settings
                         }

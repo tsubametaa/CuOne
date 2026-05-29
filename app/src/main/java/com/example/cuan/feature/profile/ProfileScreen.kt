@@ -1,7 +1,9 @@
 package com.example.cuan.feature.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -38,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import com.example.cuan.core.utils.IndonesianCurrencyVisualTransformation
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -51,6 +54,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -70,10 +74,9 @@ import com.example.cuan.ui.theme.OnBackground
 import com.example.cuan.ui.theme.OnSecondary
 import com.example.cuan.ui.theme.Secondary
 import com.example.cuan.ui.theme.TextSecondary
+import com.example.cuan.ui.theme.SurfaceError
 
-/**
- * Profile Screen (F-13)
- */
+// Profile Screen (F-13) //
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -87,6 +90,13 @@ fun ProfileScreen(
         if (uiState.saveSuccess) {
             snackbarHostState.showSnackbar("Profil berhasil disimpan")
             viewModel.clearSaveSuccess()
+        }
+    }
+
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { error ->
+            snackbarHostState.showSnackbar(error)
+            viewModel.clearErrorMessage()
         }
     }
 
@@ -108,7 +118,51 @@ fun ProfileScreen(
                 )
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { snackbarData ->
+                val isError = snackbarData.visuals.message.startsWith("Gagal") || 
+                              snackbarData.visuals.message.contains("tidak boleh kosong") ||
+                              snackbarData.visuals.message.contains("tidak valid")
+                
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 24.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .shadow(6.dp, shape = RoundedCornerShape(24.dp))
+                            .background(
+                                color = if (isError) SurfaceError else Background,
+                                shape = RoundedCornerShape(24.dp)
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = if (isError) Accent.copy(alpha = 0.3f) else Secondary.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(24.dp)
+                            )
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (isError) Icons.Default.Error else Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = if (isError) Accent else IncomeGreen,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = snackbarData.visuals.message,
+                            color = OnBackground,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                    }
+                }
+            }
+        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -225,6 +279,7 @@ fun ProfileScreen(
                         },
                         prefix = { Text("Rp ") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        visualTransformation = IndonesianCurrencyVisualTransformation(),
                         colors = textFieldColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -286,6 +341,20 @@ fun ProfileScreen(
                         label = { Text("API Key OpenRouter") },
                         leadingIcon = {
                             Icon(Icons.Default.SmartToy, contentDescription = null)
+                        },
+                        visualTransformation = PasswordVisualTransformation(),
+                        colors = textFieldColors(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = uiState.googleAccessToken,
+                        onValueChange = viewModel::updateGoogleAccessToken,
+                        label = { Text("Google Access Token") },
+                        leadingIcon = {
+                            Icon(Icons.Default.TableChart, contentDescription = null)
                         },
                         visualTransformation = PasswordVisualTransformation(),
                         colors = textFieldColors(),

@@ -21,6 +21,7 @@ data class ProfileUiState(
     val monthlyBudget: String = "",
     val sheetsUrl: String = "",
     val apiKey: String = "",
+    val googleAccessToken: String = "",
     val isLoading: Boolean = false,
     val saveSuccess: Boolean = false,
     val errorMessage: String? = null
@@ -48,6 +49,7 @@ class ProfileViewModel @Inject constructor(
             val monthlyBudget = appDataStore.userMonthlyBudget.first()
             val sheetsUrl = appDataStore.sheetsUrl.first()
             val apiKey = appDataStore.openRouterApiKey.first()
+            val googleAccessToken = appDataStore.googleAccessToken.first()
 
             val incomeRange = try {
                 IncomeRange.valueOf(incomeRangeStr)
@@ -63,6 +65,7 @@ class ProfileViewModel @Inject constructor(
                     monthlyBudget = if (monthlyBudget > 0) monthlyBudget.toString() else "",
                     sheetsUrl = sheetsUrl,
                     apiKey = apiKey,
+                    googleAccessToken = googleAccessToken,
                     isLoading = false
                 )
             }
@@ -92,6 +95,10 @@ class ProfileViewModel @Inject constructor(
 
     fun updateApiKey(apiKey: String) {
         _uiState.update { it.copy(apiKey = apiKey) }
+    }
+
+    fun updateGoogleAccessToken(token: String) {
+        _uiState.update { it.copy(googleAccessToken = token) }
     }
 
     fun saveProfile() {
@@ -136,6 +143,7 @@ class ProfileViewModel @Inject constructor(
                 appDataStore.saveSheetsUrl(state.sheetsUrl)
                 appDataStore.saveSheetsId(spreadsheetId)
                 appDataStore.saveOpenRouterApiKey(state.apiKey)
+                appDataStore.saveGoogleAccessToken(state.googleAccessToken)
                 
                 // Mark profile as complete
                 appDataStore.setProfileComplete(true)
@@ -154,5 +162,9 @@ class ProfileViewModel @Inject constructor(
 
     fun clearSaveSuccess() {
         _uiState.update { it.copy(saveSuccess = false) }
+    }
+
+    fun clearErrorMessage() {
+        _uiState.update { it.copy(errorMessage = null) }
     }
 }

@@ -1,12 +1,17 @@
 package com.example.cuan.feature.analytics
 
 import androidx.lifecycle.ViewModel
-import com.example.cuan.core.utils.DateUtils
+import androidx.lifecycle.viewModelScope
+import com.example.cuan.data.model.Transaction
+import com.example.cuan.data.model.TransactionType
+import com.example.cuan.data.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
@@ -27,60 +32,111 @@ data class AnalyticsUiState(
 )
 
 @HiltViewModel
-class AnalyticsViewModel @Inject constructor() : ViewModel() {
+class AnalyticsViewModel @Inject constructor(
+    private val transactionRepository: TransactionRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AnalyticsUiState())
     val uiState: StateFlow<AnalyticsUiState> = _uiState.asStateFlow()
 
+    private val _selectedMonth = MutableStateFlow(YearMonth.now())
+
     init {
         loadAvailableMonths()
-        loadData()
+        observeTransactions()
     }
 
     private fun loadAvailableMonths() {
         val now = YearMonth.now()
         val months = (0..5).map { now.minusMonths(it.toLong()) }
-        
-        _uiState.update { it.copy(availableMonths = months) }
+        _uiState.update { it.copy(availableMonths = months, selectedMonth = now) }
     }
 
-    private fun loadData() {
-        // Sample data - in real app would load from Sheets/Repository
-        val now = YearMonth.now()
-        val daysInMonth = now.lengthOfMonth()
-        val currentDay = LocalDate.now().dayOfMonth
-
-        val sampleCategoryBreakdown = listOf(
-            CategoryBreakdownItem("Makan", 850000, 0.34f),
-            CategoryBreakdownItem("Transport", 450000, 0.18f),
-            CategoryBreakdownItem("Belanja", 600000, 0.24f),
-            CategoryBreakdownItem("Hiburan", 250000, 0.10f),
-            CategoryBreakdownItem("Tagihan", 350000, 0.14f)
-        )
-
-        val totalExpense = sampleCategoryBreakdown.sumOf { it.amount }
-        val totalIncome = 5500000L
-        val balance = totalIncome - totalExpense
-
-        _uiState.update {
-            it.copy(
-                selectedMonth = now,
-                totalIncome = totalIncome,
-                totalExpense = totalExpense,
-                comparedToPrevMonth = 0.12f, // 12% increase
-                categoryBreakdown = sampleCategoryBreakdown,
-                dailyAverage = totalExpense / currentDay,
-                projectedMonthEnd = balance,
-                daysPassed = currentDay,
-                totalDays = daysInMonth,
-                topExpenses = sampleCategoryBreakdown.sortedByDescending { item -> item.amount }.take(5),
-                isLoading = false
-            )
+    private fun observeTransactions() {
+        viewModelScope.launch {
+            combine(
+                _selectedMonth,
+                transactionRepository.getAllTransactions()
+            ) { month, transactions ->
+                calculateAnalytics(month, transactions)
+            }.collect { updatedState ->
+                _uiState.update { updatedState }
+            }
         }
     }
 
+    private fun calculateAnalytics(month: YearMonth, transactions: List<Transaction>): AnalyticsUiState {
+        val daysInMonth = month.lengthOfMonth()
+        val today = LocalDate.now()
+        val daysPassed = if (month == YearMonth.now()) today.dayOfMonth else daysInMonth
+
+        // Filter transactions for the selected month
+        val currentMonthTransactions = transactions.filter { tx ->
+            val txMonth = YearMonth.from(tx.date)
+            txMonth == month
+        }
+
+        val totalIncome = currentMonthTransactions
+            .filter { it.type == TransactionType.INCOME }
+            .sumOf { it.amount }
+        val totalExpense = currentMonthTransactions
+            .filter { it.type == TransactionType.EXPENSE }
+            .sumOf { it.amount }
+
+        // Filter transactions for the previous month to calculate comparison
+        val prevMonth = month.minusMonths(1)
+        val prevMonthTransactions = transactions.filter { tx ->
+            val txMonth = YearMonth.from(tx.date)
+            txMonth == prevMonth
+        }
+        val prevMonthExpense = prevMonthTransactions
+            .filter { it.type == TransactionType.EXPENSE }
+            .sumOf { it.amount }
+
+        val comparedToPrevMonth = if (prevMonthExpense > 0) {
+            (totalExpense - prevMonthExpense).toFloat() / prevMonthExpense.toFloat()
+        } else {
+            0f
+        }
+
+        // Category breakdown
+        val expenseTransactions = currentMonthTransactions.filter { it.type == TransactionType.EXPENSE }
+        val totalExpenseSum = expenseTransactions.sumOf { it.amount }.toFloat()
+
+        val categoryBreakdown = if (totalExpenseSum > 0) {
+            val categoryGroups = expenseTransactions.groupBy { it.category }
+            categoryGroups.map { (category, txList) ->
+                val amount = txList.sumOf { it.amount }
+                CategoryBreakdownItem(
+                    category = category,
+                    amount = amount,
+                    percentage = amount.toFloat() / totalExpenseSum
+                )
+            }.sortedByDescending { it.amount }
+        } else {
+            emptyList()
+        }
+
+        val dailyAverage = if (daysPassed > 0) totalExpense / daysPassed else 0L
+        val balance = totalIncome - totalExpense
+
+        return AnalyticsUiState(
+            selectedMonth = month,
+            availableMonths = _uiState.value.availableMonths,
+            totalIncome = totalIncome,
+            totalExpense = totalExpense,
+            comparedToPrevMonth = comparedToPrevMonth,
+            categoryBreakdown = categoryBreakdown,
+            dailyAverage = dailyAverage,
+            projectedMonthEnd = balance,
+            daysPassed = daysPassed,
+            totalDays = daysInMonth,
+            topExpenses = categoryBreakdown.take(5),
+            isLoading = false
+        )
+    }
+
     fun selectMonth(month: YearMonth) {
-        _uiState.update { it.copy(selectedMonth = month) }
-        loadData() // Reload data for selected month
+        _selectedMonth.value = month
     }
 }

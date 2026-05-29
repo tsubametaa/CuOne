@@ -2,16 +2,22 @@ package com.example.cuan.feature.transaction.freetext
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.cuan.core.utils.CurrencyUtils
+import com.example.cuan.core.local.AppDataStore
 import com.example.cuan.core.utils.DateUtils
+import com.example.cuan.data.model.Transaction
+import com.example.cuan.data.model.TransactionSource
 import com.example.cuan.data.model.TransactionType
+import com.example.cuan.data.repository.AIRepository
+import com.example.cuan.data.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.util.UUID
 import javax.inject.Inject
 
 data class ParsedTransactionData(
@@ -19,7 +25,7 @@ data class ParsedTransactionData(
     val type: TransactionType = TransactionType.EXPENSE,
     val category: String = "",
     val note: String = "",
-    val date: String = DateUtils.todayFormatted()
+    val date: LocalDate = LocalDate.now()
 )
 
 data class FreeTextUiState(
@@ -33,7 +39,12 @@ data class FreeTextUiState(
 )
 
 @HiltViewModel
-class FreeTextViewModel @Inject constructor() : ViewModel() {
+class FreeTextViewModel @Inject constructor(
+    private val appDataStore: AppDataStore,
+    private val transactionRepository: TransactionRepository,
+    private val aiRepository: AIRepository,
+    private val syncManager: com.example.cuan.core.sync.SyncManager
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FreeTextUiState())
     val uiState: StateFlow<FreeTextUiState> = _uiState.asStateFlow()
@@ -49,128 +60,41 @@ class FreeTextViewModel @Inject constructor() : ViewModel() {
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessing = true, errorMessage = null) }
 
-            // Simulate AI processing delay
-            delay(1500)
-
             try {
-                // Simple local parsing (in real app would call OpenRouter)
-                val parsed = parseTransactionText(input)
-                _uiState.update {
-                    it.copy(
-                        isProcessing = false,
-                        parsedData = parsed,
-                        showResultSheet = true
-                    )
-                }
+                val apiKey = appDataStore.openRouterApiKey.first()
+                val parseResult = aiRepository.parseFreeText(input, apiKey)
+                
+                parseResult.fold(
+                    onSuccess = { parsed ->
+                        _uiState.update {
+                            it.copy(
+                                isProcessing = false,
+                                parsedData = ParsedTransactionData(
+                                    amount = parsed.amount.toString(),
+                                    type = parsed.type,
+                                    category = parsed.category,
+                                    note = parsed.note,
+                                    date = parsed.date
+                                ),
+                                showResultSheet = true
+                            )
+                        }
+                    },
+                    onFailure = { e ->
+                        throw e
+                    }
+                )
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isProcessing = false,
-                        errorMessage = "Tidak dapat memahami input, coba lebih spesifik"
+                        errorMessage = "AI gagal memproses: ${e.message}. Coba lagi."
                     )
                 }
             }
         }
     }
 
-    private fun parseTransactionText(text: String): ParsedTransactionData {
-        val lowerText = text.lowercase()
-        
-        // Detect transaction type based on keywords
-        val isIncome = lowerText.contains("terima") || 
-                       lowerText.contains("gaji") || 
-                       lowerText.contains("bonus") ||
-                       lowerText.contains("uang") && lowerText.contains("masuk")
-        
-        // Extract amount
-        val amount = extractAmount(text)
-        
-        // Detect category
-        val category = detectCategory(text, isIncome)
-        
-        // Generate note from input
-        val note = generateNote(text)
-        
-        return ParsedTransactionData(
-            amount = amount,
-            type = if (isIncome) TransactionType.INCOME else TransactionType.EXPENSE,
-            category = category,
-            note = note,
-            date = DateUtils.todayFormatted()
-        )
-    }
-
-    private fun extractAmount(text: String): String {
-        // Look for patterns like "35rb", "5 juta", "Rp 150.000"
-        val patterns = listOf(
-            Regex("(\\d+)\\s*jt", RegexOption.IGNORE_CASE),  // e.g., "5jt", "5 jt"
-            Regex("(\\d+)\\s*rb", RegexOption.IGNORE_CASE),  // e.g., "35rb", "35 rb"
-            Regex("Rp\\s*([\\d.]+)", RegexOption.IGNORE_CASE),  // e.g., "Rp 150.000"
-            Regex("([\\d.]+)\\s*ribu", RegexOption.IGNORE_CASE),  // e.g., "35 ribu"
-            Regex("([\\d.]+)\\s*juta", RegexOption.IGNORE_CASE)  // e.g., "5 juta"
-        )
-
-        for (pattern in patterns) {
-            val match = pattern.find(text)
-            if (match != null) {
-                var value = match.groupValues[1].replace(".", "")
-                
-                // Handle shorthand
-                if (text.contains("jt") || text.contains("juta")) {
-                    return ((value.toLongOrNull() ?: 0) * 1_000_000).toString()
-                } else if (text.contains("rb") || text.contains("ribu")) {
-                    return ((value.toLongOrNull() ?: 0) * 1_000).toString()
-                }
-
-                return value
-            }
-        }
-
-        return ""
-    }
-
-    private fun detectCategory(text: String, isIncome: Boolean): String {
-        val lowerText = text.lowercase()
-
-        if (isIncome) {
-            return when {
-                lowerText.contains("gaji") -> "Gaji"
-                lowerText.contains("freelance") || lowerText.contains("proyek") -> "Freelance"
-                lowerText.contains("bisnis") -> "Bisnis"
-                lowerText.contains("invest") -> "Investasi"
-                lowerText.contains("hadiah") || lowerText.contains("uang") -> "Hadiah"
-                else -> "Lainnya"
-            }
-        }
-
-        return when {
-            lowerText.contains("makan") || lowerText.contains("kopi") || 
-            lowerText.contains("food") || lowerText.contains("cafe") -> "Makan"
-            lowerText.contains("grab") || lowerText.contains("gojek") || 
-            lowerText.contains("taxi") || lowerText.contains("transport") -> "Transport"
-            lowerText.contains("belanja") || lowerText.contains("mart") -> "Belanja"
-            lowerText.contains("movie") || lowerText.contains("bioskop") || 
-            lowerText.contains("hiburan") -> "Hiburan"
-            lowerText.contains("obat") || lowerText.contains("klinik") || 
-            lowerText.contains("dokter") -> "Kesehatan"
-            lowerText.contains("listrik") || lowerText.contains("air") || 
-            lowerText.contains("pulsa") || lowerText.contains("tagihan") -> "Tagihan"
-            else -> "Lainnya"
-        }
-    }
-
-    private fun generateNote(text: String): String {
-        // Clean up the input text to use as note
-        val cleaned = text
-            .replace(Regex("\\d+\\s*(jt|rb|juta|ribu)", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("Rp\\s*[\\d.]+"), "")
-            .replace(Regex("\\b(beli|terima|uang|kas)\\b", RegexOption.IGNORE_CASE), "")
-            .trim()
-        
-        return cleaned.take(50) // Limit note length
-    }
-
-    // Parsed data updates
     fun updateParsedAmount(amount: String) {
         val filtered = amount.filter { it.isDigit() }
         _uiState.update { state ->
@@ -203,7 +127,7 @@ class FreeTextViewModel @Inject constructor() : ViewModel() {
     fun saveTransaction() {
         val parsed = _uiState.value.parsedData ?: return
 
-        if (parsed.amount.isEmpty()) {
+        if (parsed.amount.isEmpty() || parsed.amount == "0") {
             _uiState.update { it.copy(errorMessage = "Nominal tidak boleh kosong") }
             return
         }
@@ -217,8 +141,22 @@ class FreeTextViewModel @Inject constructor() : ViewModel() {
             _uiState.update { it.copy(isSaving = true) }
 
             try {
-                // In real app: save to Room, sync to Sheets
-                delay(500)
+                val transaction = Transaction(
+                    id = UUID.randomUUID().toString(),
+                    amount = parsed.amount.toLongOrNull() ?: 0L,
+                    type = parsed.type,
+                    category = parsed.category,
+                    note = parsed.note,
+                    date = parsed.date,
+                    timeMillis = System.currentTimeMillis(),
+                    source = TransactionSource.FREE_TEXT,
+                    isSynced = false
+                )
+                
+                transactionRepository.insertTransaction(transaction)
+                viewModelScope.launch {
+                    syncManager.syncPendingTransactions()
+                }
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
             } catch (e: Exception) {
                 _uiState.update {

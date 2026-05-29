@@ -2,10 +2,8 @@ package com.example.cuan.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.example.cuan.feature.analytics.AnalyticsScreen
 import com.example.cuan.feature.ai_chat.AIChatScreen
 import com.example.cuan.feature.dashboard.DashboardScreen
@@ -19,12 +17,11 @@ import com.example.cuan.feature.transaction.add.AddTransactionScreen
 import com.example.cuan.feature.transaction.freetext.FreeTextScreen
 import com.example.cuan.feature.transaction.list.TransactionListScreen
 import com.example.cuan.feature.transaction.scan.ScanScreen
+import com.example.cuan.core.utils.OcrTextHolder
 
 import androidx.compose.ui.Modifier
 
-/**
- * Navigation graph for CuOne app
- */
+// Navigation graph for CuOne app
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
@@ -88,6 +85,9 @@ fun AppNavGraph(
                 },
                 onNavigateToProfile = {
                     navController.navigate(AppRoute.Profile.route)
+                },
+                onNavigateToAIChat = {
+                    navController.navigate(AppRoute.AIChat.route)
                 }
             )
         }
@@ -97,7 +97,9 @@ fun AppNavGraph(
         }
 
         composable(AppRoute.AIChat.route) {
-            AIChatScreen()
+            AIChatScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
         composable(AppRoute.Goals.route) {
@@ -122,17 +124,21 @@ fun AppNavGraph(
         composable(AppRoute.Scan.route) {
             ScanScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onScanSuccess = { ocrText ->
-                    navController.navigate(AppRoute.ScanResult.createRoute(ocrText))
+                onScanSuccess = {
+                    // ocrText is already stored in OcrTextHolder by ScanScreen
+                    navController.navigate(AppRoute.ScanResult.route)
+                },
+                onNavigateToFreeText = {
+                    navController.navigate(AppRoute.FreeText.route)
+                },
+                onNavigateToManual = {
+                    navController.navigate(AppRoute.AddTransaction.route)
                 }
             )
         }
 
-        composable(
-            route = AppRoute.ScanResult.route,
-            arguments = listOf(navArgument("ocrText") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val ocrText = backStackEntry.arguments?.getString("ocrText") ?: ""
+        composable(route = AppRoute.ScanResult.route) {
+            val ocrText = androidx.compose.runtime.remember { OcrTextHolder.getAndClear() }
             com.example.cuan.feature.transaction.scan.ScanResultScreen(
                 ocrText = ocrText,
                 onNavigateBack = { navController.popBackStack() },

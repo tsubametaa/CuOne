@@ -31,6 +31,8 @@ import com.example.cuan.ui.theme.OnBackground
 import com.example.cuan.ui.theme.Secondary
 import com.example.cuan.ui.theme.TextSecondary
 
+import com.example.cuan.core.utils.IndonesianCurrencyVisualTransformation
+
 @Composable
 fun TransactionAmountCardComponent(
     amount: String,
@@ -77,6 +79,7 @@ fun TransactionAmountCardComponent(
                     ),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    visualTransformation = IndonesianCurrencyVisualTransformation(),
                     cursorBrush = SolidColor(Secondary),
                     modifier = Modifier.weight(1f),
                     decorationBox = { innerTextField ->

@@ -3,8 +3,9 @@ package com.example.cuan.feature.ai_chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cuan.core.local.AppDataStore
+import com.example.cuan.data.repository.AIRepository
+import com.example.cuan.data.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,7 +38,9 @@ private val defaultSuggestedQuestions = listOf(
 
 @HiltViewModel
 class AIChatViewModel @Inject constructor(
-    private val appDataStore: AppDataStore
+    private val appDataStore: AppDataStore,
+    private val transactionRepository: TransactionRepository,
+    private val aiRepository: AIRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AIChatUiState())
@@ -72,50 +75,85 @@ class AIChatViewModel @Inject constructor(
             )
         }
 
-        // Simulate AI response
+        // Send query to AI
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            // Add loading message
+            // Add loading message placeholder
             _uiState.update { state ->
                 state.copy(messages = state.messages + ChatMessage("", isFromUser = false, isLoading = true))
             }
 
-            // Simulate AI processing delay
-            delay(1500)
+            try {
+                val apiKey = appDataStore.openRouterApiKey.first()
+                val userName = appDataStore.userName.first()
+                val occupation = appDataStore.userOccupation.first()
+                
+                // Get transaction context
+                val transactions = transactionRepository.getAllTransactions().first()
+                val transactionsJson = transactions.take(100).joinToString(separator = ",\n") { t ->
+                    """{"tanggal":"${t.date}","tipe":"${t.type.name}","kategori":"${t.category}","nominal":${t.amount},"catatan":"${t.note}"}"""
+                }
 
-            // Generate response (in real app would call OpenRouter)
-            val response = generateAIResponse(userMessage)
+                val systemPrompt = """
+                    Kamu adalah asisten keuangan personal yang membantu dan profesional.
+                    Nama pengguna: $userName. Pekerjaan: $occupation.
+                    Data transaksi: [
+                    $transactionsJson
+                    ]
 
-            // Remove loading and add response
-            _uiState.update { state ->
-                val messagesWithoutLoading = state.messages.dropLast(1)
-                state.copy(
-                    messages = messagesWithoutLoading + ChatMessage(response, isFromUser = false),
-                    isLoading = false
+                    Jawab pertanyaan pengguna berdasarkan data di atas secara ringkas dan
+                    informatif dalam Bahasa Indonesia. Jika relevan, berikan saran praktis
+                    yang spesifik. Jangan pernah mengarang data yang tidak ada dalam konteks.
+                    Format nominal selalu dalam Rupiah (contoh: Rp 1.500.000).
+                """.trimIndent()
+
+                // Map UI messages history (excluding last loading placeholder and user message)
+                val uiMessagesBeforeUserMessage = _uiState.value.messages.dropLast(2)
+                val networkHistory = uiMessagesBeforeUserMessage.map { uiMsg ->
+                    com.example.cuan.core.network.ChatMessage(
+                        role = if (uiMsg.isFromUser) "user" else "assistant",
+                        content = uiMsg.text
+                    )
+                }
+
+                val systemMessage = com.example.cuan.core.network.ChatMessage(role = "system", content = systemPrompt)
+                val historyWithSystem = listOf(systemMessage) + networkHistory
+
+                val result = aiRepository.chatWithFinance(
+                    prompt = userMessage,
+                    history = historyWithSystem,
+                    apiKey = apiKey
                 )
-            }
-        }
-    }
 
-    private fun generateAIResponse(userMessage: String): String {
-        val lowerMessage = userMessage.lowercase()
-
-        return when {
-            lowerMessage.contains("pengeluaran minggu") || lowerMessage.contains("minggu ini") -> {
-                "Berdasarkan data minggu ini, total pengeluaran kamu sekitar Rp 485.000. terbesar adalah untuk makan (Rp 250.000) dan transport (Rp 150.000)."
-            }
-            lowerMessage.contains("kategori") && lowerMessage.contains("besar") -> {
-                "Bulan ini, kategori terbesar adalah:\n\n1. Makan: Rp 850.000 (34%)\n2. Belanja: Rp 600.000 (24%)\n3. Transport: Rp 450.000 (18%)\n\nUntuk kategori makan, kamu bisa coba memasak sendiri di rumah untuk menghemat sekitar 30-40%."
-            }
-            lowerMessage.contains("tren") || lowerMessage.contains("3 bulan") -> {
-                "Tren keuangan 3 bulan terakhir:\n\n- Bulan Maret: Pendapatan Rp 5.5jt, Pengeluaran Rp 2.3jt\n- Bulan April: Pendapatan Rp 5.5jt, Pengeluaran Rp 2.8jt\n- Bulan Mei: Pendapatan Rp 5.5jt, Pengeluaran Rp 2.5jt\n\nPengeluaran kamu cukup stabil, tapi ada kenaikan dibanding bulan lalu."
-            }
-            lowerMessage.contains("hemat") || lowerMessage.contains("irit") -> {
-                "Berdasarkan analysismu, beberapa tips hemat:\n\n1. **Makan** - Bisa hemat Rp 250rb/bulan dengan memasak sendiri\n2. **Hiburan** - Langganan streaming bisa digabung dengan keluarga\n3. **Belanja** - Beli groceries mingguan daripada harian\n\nMau aku bantu hitung target penghematan bulan depan?"
-            }
-            else -> {
-                "Pertanyaan yang bagus! Aku bisa membantu kamu menganalisis keuangan dengan lebih detail. Coba tanya tentang:\n\n- Total pengeluaran minggu ini\n- Kategori terbesar bulan ini\n- Tips hemat dinheiro\n\nAda yang ingin kamu tanya lagi?"
+                result.fold(
+                    onSuccess = { aiResponse ->
+                        _uiState.update { state ->
+                            val messagesWithoutLoading = state.messages.dropLast(1)
+                            state.copy(
+                                messages = messagesWithoutLoading + ChatMessage(aiResponse, isFromUser = false),
+                                isLoading = false
+                            )
+                        }
+                    },
+                    onFailure = { e ->
+                        _uiState.update { state ->
+                            val messagesWithoutLoading = state.messages.dropLast(1)
+                            state.copy(
+                                messages = messagesWithoutLoading + ChatMessage("Maaf, terjadi kesalahan: ${e.message}", isFromUser = false),
+                                isLoading = false
+                            )
+                        }
+                    }
+                )
+            } catch (e: Exception) {
+                _uiState.update { state ->
+                    val messagesWithoutLoading = state.messages.dropLast(1)
+                    state.copy(
+                        messages = messagesWithoutLoading + ChatMessage("Maaf, terjadi kesalahan: ${e.message}", isFromUser = false),
+                        isLoading = false
+                    )
+                }
             }
         }
     }

@@ -28,7 +28,7 @@ class ScanViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ScanUiState())
     val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
 
-    fun processImage(uri: Uri, context: Context) {
+    fun processImage(uri: Uri?, context: Context) {
         _uiState.update { it.copy(selectedImageUri = uri) }
     }
 

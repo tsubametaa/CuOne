@@ -39,4 +39,7 @@ interface TransactionQueueDao {
 
     @Query("SELECT COUNT(*) FROM transaction_queue")
     suspend fun getTransactionCount(): Int
+
+    @Query("SELECT COUNT(*) FROM transaction_queue WHERE dateMillis >= :startOfDay AND dateMillis <= :endOfDay")
+    suspend fun getTransactionCountForDay(startOfDay: Long, endOfDay: Long): Int
 }

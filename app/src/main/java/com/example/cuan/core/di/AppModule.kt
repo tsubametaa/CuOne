@@ -19,9 +19,7 @@ import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
-/**
- * Hilt module providing app-level dependencies
- */
+// Hilt module providing app-level dependencies //
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -71,9 +69,44 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideTransactionQueueDao(
+        database: AppDatabase
+    ): com.example.cuan.core.local.dao.TransactionQueueDao {
+        return database.transactionQueueDao()
+    }
+
+    @Provides
+    @Singleton
     fun provideAIRepository(
         apiService: OpenRouterApiService
     ): AIRepository {
         return AIRepositoryImpl(apiService)
     }
-}
+
+    @Provides
+    @Singleton
+    fun provideSheetsApiService(): com.example.cuan.core.network.SheetsApiService {
+        val logging = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(logging)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
+
+        return Retrofit.Builder()
+            .baseUrl("https://sheets.googleapis.com/")
+            .client(okHttpClient)
+            .build()
+            .create(com.example.cuan.core.network.SheetsApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSheetsRepository(
+        apiService: com.example.cuan.core.network.SheetsApiService
+    ): com.example.cuan.data.repository.SheetsRepository {
+        return com.example.cuan.data.repository.SheetsRepositoryImpl(apiService)
+    }
+}

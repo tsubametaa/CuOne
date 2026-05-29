@@ -23,6 +23,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.isImeVisible
@@ -36,19 +40,18 @@ import com.example.cuan.ui.theme.OnBackground
 import com.example.cuan.ui.theme.Secondary
 import com.example.cuan.ui.theme.TextSecondary
 
-/**
- * AI Chat Screen (F-08) - Minimalist & Professional redesign.
- */
+// AI Chat Screen (F-08) - Minimalist & Professional redesign. //
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AIChatScreen(
-    viewModel: AIChatViewModel = hiltViewModel()
+    viewModel: AIChatViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
 
     val isKeyboardVisible = WindowInsets.isImeVisible
-    val bottomPadding = if (isKeyboardVisible) 0.dp else 80.dp
+    val bottomPadding = if (isKeyboardVisible) 0.dp else 16.dp
 
     // Auto-scroll to bottom on new messages
     LaunchedEffect(uiState.messages.size) {
@@ -70,9 +73,18 @@ fun AIChatScreen(
                             )
                         )
                         Text(
-                            text = "Didukung Nemotron",
+                            text = "Asisten Keuanganmu",
                             style = MaterialTheme.typography.labelSmall,
                             color = TextSecondary
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Kembali",
+                            tint = OnBackground
                         )
                     }
                 },

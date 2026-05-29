@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -44,6 +43,9 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import com.example.cuan.feature.dashboard.components.DashboardNotificationsBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -52,6 +54,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -83,10 +86,12 @@ fun DashboardScreen(
     onNavigateToScan: () -> Unit,
     onNavigateToFreeText: () -> Unit,
     onNavigateToTransactionList: () -> Unit,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    onNavigateToAIChat: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var showFabMenu by remember { mutableStateOf(false) }
+    var showNotificationsSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
 
     Scaffold(
         topBar = {
@@ -107,7 +112,7 @@ fun DashboardScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO: Notifications */ }) {
+                    IconButton(onClick = { showNotificationsSheet = true }) {
                         Icon(
                             Icons.Default.Notifications,
                             contentDescription = "Notifications",
@@ -121,56 +126,17 @@ fun DashboardScreen(
             )
         },
         floatingActionButton = {
-            Column(
-                horizontalAlignment = Alignment.End,
+            FloatingActionButton(
+                onClick = onNavigateToAIChat,
+                containerColor = Accent,
+                contentColor = Color.White,
+                shape = CircleShape,
                 modifier = Modifier.padding(bottom = 76.dp)
             ) {
-                // Mini FABs (shown when expanded)
-                AnimatedVisibility(visible = showFabMenu) {
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        MiniFabWithLabel(
-                            icon = Icons.Default.QrCodeScanner,
-                            label = "Scan Struk",
-                            onClick = {
-                                showFabMenu = false
-                                onNavigateToScan()
-                            }
-                        )
-                        MiniFabWithLabel(
-                            icon = Icons.AutoMirrored.Filled.Message,
-                            label = "Teks Bebas",
-                            onClick = {
-                                showFabMenu = false
-                                onNavigateToFreeText()
-                            }
-                        )
-                        MiniFabWithLabel(
-                            icon = Icons.Default.Create,
-                            label = "Manual",
-                            onClick = {
-                                showFabMenu = false
-                                onNavigateToAddTransaction()
-                            }
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Main FAB
-                FloatingActionButton(
-                    onClick = { showFabMenu = !showFabMenu },
-                    containerColor = Accent,
-                    contentColor = Color.White
-                ) {
-                    Icon(
-                        if (showFabMenu) Icons.Default.Close else Icons.Default.Add,
-                        contentDescription = "Tambah Transaksi"
-                    )
-                }
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Message,
+                    contentDescription = "Tanya AI"
+                )
             }
         }
     ) { paddingValues ->
@@ -226,7 +192,7 @@ fun DashboardScreen(
             if (uiState.categoryData.isNotEmpty()) {
                 item {
                     ExpenseCategoryChartCard(
-                        totalAmountStr = "Rp 1,1jt",
+                        totalAmountStr = CurrencyUtils.formatRupiah(uiState.totalExpense),
                         data = uiState.categoryData
                     )
                 }
@@ -234,9 +200,10 @@ fun DashboardScreen(
 
             // Export Buttons
             item {
+                val context = LocalContext.current
                 DashboardActionButtons(
-                    onExportPdfClick = { /* TODO */ },
-                    onSpreadsheetClick = { /* TODO */ }
+                    onExportPdfClick = { viewModel.exportPdf(context) },
+                    onSpreadsheetClick = { viewModel.syncAndOpenSpreadsheet(context) }
                 )
             }
 
@@ -248,6 +215,20 @@ fun DashboardScreen(
                     onRefreshClick = { viewModel.refreshData() }
                 )
             }
+        }
+    }
+
+    // Notifications Bottom Sheet
+    if (showNotificationsSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showNotificationsSheet = false },
+            sheetState = sheetState,
+            containerColor = Background
+        ) {
+            DashboardNotificationsBottomSheet(
+                sheetsUrl = uiState.sheetsUrl,
+                dailyReminderEnabled = uiState.dailyReminderEnabled
+            )
         }
     }
 }

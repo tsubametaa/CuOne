@@ -9,7 +9,8 @@ import retrofit2.http.POST
 @Serializable
 data class OpenRouterRequest(
     val model: String = "nvidia/nemotron-3-super-120b-a12b:free",
-    val messages: List<ChatMessage>
+    val messages: List<ChatMessage>,
+    val temperature: Float = 0.3f
 )
 
 @Serializable

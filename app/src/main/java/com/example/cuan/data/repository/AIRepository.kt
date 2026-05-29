@@ -19,4 +19,10 @@ data class ParsedTransaction(
  */
 interface AIRepository {
     suspend fun parseReceipt(ocrText: String, apiKey: String): Result<ParsedTransaction>
+    suspend fun parseFreeText(text: String, apiKey: String): Result<ParsedTransaction>
+    suspend fun chatWithFinance(
+        prompt: String,
+        history: List<com.example.cuan.core.network.ChatMessage>,
+        apiKey: String
+    ): Result<String>
 }

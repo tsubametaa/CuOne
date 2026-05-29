@@ -1,9 +1,12 @@
 package com.example.cuan.feature.settings
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cuan.core.local.AppDataStore
+import com.example.cuan.core.sync.DailyReminderWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +21,8 @@ data class SettingsUiState(
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val appDataStore: AppDataStore
+    private val appDataStore: AppDataStore,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -45,6 +49,11 @@ class SettingsViewModel @Inject constructor(
     fun setDailyReminder(enabled: Boolean) {
         viewModelScope.launch {
             appDataStore.setDailyReminderEnabled(enabled)
+            if (enabled) {
+                DailyReminderWorker.schedule(context)
+            } else {
+                DailyReminderWorker.cancel(context)
+            }
         }
     }
 

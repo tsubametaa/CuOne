@@ -1,5 +1,6 @@
 package com.example.cuan.feature.goals
 
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
@@ -75,7 +76,7 @@ fun GoalsScreen(
             FloatingActionButton(
                 onClick = { showAddSheet = true },
                 containerColor = Accent,
-                shape = MaterialTheme.shapes.large,
+                shape = CircleShape,
                 modifier = Modifier.padding(bottom = 76.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Tambah Target", tint = OnAccent)

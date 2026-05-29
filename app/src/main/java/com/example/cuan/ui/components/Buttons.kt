@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -23,6 +24,7 @@ import com.example.cuan.ui.theme.BackgroundVariant
 import com.example.cuan.ui.theme.OnAccent
 import com.example.cuan.ui.theme.OnSecondary
 import com.example.cuan.ui.theme.Secondary
+import com.example.cuan.ui.theme.TextSecondary
 
 /**
  * Primary button - Used for: Simpan, Konfirmasi, Mulai, Proses
@@ -37,16 +39,17 @@ fun PrimaryButtonComponent(
     enabled: Boolean = true,
     isLoading: Boolean = false
 ) {
+    val textColor = if (enabled) OnAccent else TextSecondary.copy(alpha = 0.6f)
     Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled && !isLoading,
-        shape = RoundedCornerShape(12.dp),
+        shape = CircleShape,
         colors = ButtonDefaults.buttonColors(
             containerColor = if (enabled) Accent else BackgroundVariant,
-            contentColor = if (enabled) OnAccent else Background,
+            contentColor = textColor,
             disabledContainerColor = BackgroundVariant,
-            disabledContentColor = Background
+            disabledContentColor = TextSecondary.copy(alpha = 0.6f)
         ),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp)
     ) {
@@ -67,7 +70,8 @@ fun PrimaryButtonComponent(
             }
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
+                color = textColor
             )
         }
     }
@@ -85,16 +89,17 @@ fun SecondaryButtonComponent(
     icon: ImageVector? = null,
     enabled: Boolean = true
 ) {
+    val textColor = if (enabled) OnSecondary else TextSecondary.copy(alpha = 0.6f)
     Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        shape = RoundedCornerShape(12.dp),
+        shape = CircleShape,
         colors = ButtonDefaults.buttonColors(
             containerColor = Secondary,
-            contentColor = OnSecondary,
+            contentColor = textColor,
             disabledContainerColor = BackgroundVariant,
-            disabledContentColor = Background
+            disabledContentColor = TextSecondary.copy(alpha = 0.6f)
         ),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp)
     ) {
@@ -108,7 +113,8 @@ fun SecondaryButtonComponent(
         }
         Text(
             text = text,
-            style = MaterialTheme.typography.labelLarge
+            style = MaterialTheme.typography.labelLarge,
+            color = textColor
         )
     }
 }

@@ -57,7 +57,8 @@ data class AddTransactionUiState(
 class AddTransactionViewModel @Inject constructor(
     private val appDataStore: AppDataStore,
     private val transactionRepository: TransactionRepository,
-    private val aiRepository: AIRepository
+    private val aiRepository: AIRepository,
+    private val syncManager: com.example.cuan.core.sync.SyncManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddTransactionUiState())
@@ -238,6 +239,10 @@ class AddTransactionViewModel @Inject constructor(
                 )
                 
                 transactionRepository.insertTransaction(transaction)
+                
+                viewModelScope.launch {
+                    syncManager.syncPendingTransactions()
+                }
                 
                 _uiState.update { 
                     it.copy(

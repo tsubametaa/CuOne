@@ -10,9 +10,7 @@ sealed class AppRoute(val route: String) {
     object Dashboard : AppRoute("dashboard")
     object AddTransaction : AppRoute("add_transaction")
     object Scan : AppRoute("scan")
-    object ScanResult : AppRoute("scan_result/{ocrText}") {
-        fun createRoute(ocrText: String) = "scan_result/$ocrText"
-    }
+    object ScanResult : AppRoute("scan_result")
     object FreeText : AppRoute("free_text")
     object TransactionList : AppRoute("transaction_list")
     object Analytics : AppRoute("analytics")
@@ -32,7 +30,7 @@ enum class BottomNavItem(
 ) {
     Dashboard("dashboard", "Beranda", "LayoutDashboard"),
     Analytics("analytics", "Analitik", "BarChart3"),
-    AIChat("ai_chat", "AI", "Bot"),
+    Scan("scan", "Pindai", "ScanLine"),
     Goals("goals", "Target", "Target"),
     Settings("settings", "Setelan", "Settings2")
 }
