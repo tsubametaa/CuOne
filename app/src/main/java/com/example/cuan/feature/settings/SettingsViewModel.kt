@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.example.cuan.data.repository.TransactionRepository
+import com.example.cuan.core.utils.SummaryImageGenerator
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 data class SettingsUiState(
@@ -22,6 +25,7 @@ data class SettingsUiState(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val appDataStore: AppDataStore,
+    private val transactionRepository: TransactionRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -60,6 +64,24 @@ class SettingsViewModel @Inject constructor(
     fun setDailyReminderHour(hour: Int) {
         viewModelScope.launch {
             appDataStore.setDailyReminderHour(hour)
+        }
+    }
+
+
+    fun shareSummary(context: Context, onShareReady: (android.net.Uri) -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val transactions = transactionRepository.getAllTransactions().first()
+                val uri = SummaryImageGenerator.generateAndGetUri(context, transactions)
+                if (uri != null) {
+                    onShareReady(uri)
+                } else {
+                    onError("Gagal membuat gambar ringkasan.")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                onError(e.message ?: "Terjadi kesalahan.")
+            }
         }
     }
 }

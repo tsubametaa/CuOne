@@ -1,5 +1,9 @@
 # CuOne — Cuan: Pencatatan Keuangan Cerdas
 
+<p align="center">
+	<img src="app/src/main/res/drawable/cuone_splash.png" alt="Logo CuOne" width="180" />
+</p>
+
 Sebuah aplikasi Android berbasis Kotlin + Jetpack Compose yang memudahkan pencatatan transaksi, analitik keuangan, dan integrasi Google Sheets tanpa backend pusat. Dirancang untuk menjaga kedaulatan data pengguna, mendukung pencatatan manual, pemindaian struk (OCR + AI), dan chat asisten keuangan berbasis model OpenRouter.
 
 ## Ringkasan Singkat
@@ -22,6 +26,51 @@ Sebuah aplikasi Android berbasis Kotlin + Jetpack Compose yang memudahkan pencat
 - Asisten AI chat yang dapat menjawab pertanyaan keuangan berbasis data pengguna.
 - Sinkronisasi offline-first: Room queue + WorkManager untuk push ke Sheets saat online.
 - Export/Share ringkasan visual (bitmap) untuk dibagikan ke aplikasi lain.
+
+## Tampilan Aplikasi
+
+Berikut beberapa tampilan utama aplikasi CuOne.
+
+<p align="center">
+	<img src="app/src/main/res/img/home.png" alt="CuOne Beranda" width="920" />
+</p>
+
+<p align="center"><em>Beranda utama yang menampilkan saldo, ringkasan cepat, analitik mingguan, dan akses fitur inti.</em></p>
+
+<table>
+	<tr>
+		<td align="center" width="50%">
+			<img src="app/src/main/res/img/transaksi.png" alt="CuOne Transaksi" width="100%" />
+			<br />
+			<strong>Transaksi</strong>
+			<br />
+			<sub>Form konfirmasi transaksi dengan kategori, nominal, tanggal, dan catatan.</sub>
+		</td>
+		<td align="center" width="50%">
+			<img src="app/src/main/res/img/reading.png" alt="CuOne Scan Struk" width="100%" />
+			<br />
+			<strong>Scan Struk</strong>
+			<br />
+			<sub>Proses pembacaan struk berbasis OCR dan AI untuk ekstraksi otomatis.</sub>
+		</td>
+	</tr>
+	<tr>
+		<td align="center" width="50%">
+			<img src="app/src/main/res/img/analitik.png" alt="CuOne Analitik" width="100%" />
+			<br />
+			<strong>Analitik</strong>
+			<br />
+			<sub>Ringkasan keuangan bulanan, kategori pengeluaran, dan tren mingguan.</sub>
+		</td>
+		<td align="center" width="50%">
+			<img src="app/src/main/res/img/chatbot.png" alt="CuOne AI Chat" width="100%" />
+			<br />
+			<strong>AI Chat</strong>
+			<br />
+			<sub>Asisten finansial untuk menjawab pertanyaan dan memberi saran praktis.</sub>
+		</td>
+	</tr>
+</table>
 
 ## Arsitektur & Alur Kerja (ringkas)
 
@@ -118,7 +167,10 @@ Jika parsing gagal, fallback ke form manual.
 
 ## Kontak
 
-Untuk pertanyaan teknis dan kontribusi lebih lanjut, buka issue di repository atau hubungi maintainer proyek.
+Untuk pertanyaan teknis dan kontribusi lebih lanjut, buka issue di repository atau hubungi maintainer proyek:
+
+- GitHub: [tsubametaa](https://github.com/tsubametaa) - Alvin Putra
+- GitHub: [Rasen22](https://github.com/Rasen22) - Farhan Rasendriya
 
 ---
 

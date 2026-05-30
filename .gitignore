@@ -14,4 +14,7 @@
 .cxx
 local.properties
 
-.kotlin/errors/errors-1780060221004.log
+/.kotlin/errors
+
+COLLABORATOR.md
+AGENTS.md

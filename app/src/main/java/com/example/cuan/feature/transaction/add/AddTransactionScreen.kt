@@ -212,7 +212,7 @@ fun AddTransactionScreen(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "Simpan Transaksi", style = MaterialTheme.typography.labelLarge)
+                        Text(text = "Simpan Transaksi", style = MaterialTheme.typography.labelLarge.copy(color = Color.White))
                     }
                 }
             }

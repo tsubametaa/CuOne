@@ -823,7 +823,7 @@ Dot indicator di bawah menunjukkan posisi slide aktif (warna aktif: `Secondary`,
 - Tap Simpan → `AddTransactionUseCase` → simpan ke Room queue → trigger sync
 - Jika ada internet: sync langsung, snackbar "Transaksi tersimpan" → pop back
 - Jika offline: snackbar "Tersimpan. Akan disinkronkan saat online" → pop back
-
+ 
 ---
 
 ### F-04: TAMBAH TRANSAKSI — SCAN STRUK / QRIS

@@ -16,13 +16,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.Image
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.example.cuan.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -52,17 +51,17 @@ fun OnboardingCarouselScreen(
 
     val slides = listOf(
         CarouselSlide(
-            icon = Icons.AutoMirrored.Filled.ReceiptLong,
+            imageResId = R.drawable.onboarding_1,
             title = "Catat Setiap Transaksi",
             description = "Catat pemasukan dan pengeluaran dengan cepat, manual atau lewat scan struk"
         ),
         CarouselSlide(
-            icon = Icons.Default.CameraAlt,
+            imageResId = R.drawable.onboarding_2,
             title = "Scan Struk dan QRIS",
             description = "Foto struk belanja atau screenshot QRIS, AI kami langsung mengenali detailnya"
         ),
         CarouselSlide(
-            icon = Icons.Default.BarChart,
+            imageResId = R.drawable.onboarding_3,
             title = "Analitik Keuangan Cerdas",
             description = "Lihat grafik, deteksi pengeluaran tidak wajar, dan tanya langsung ke AI soal keuanganmu"
         )
@@ -131,7 +130,7 @@ fun OnboardingCarouselScreen(
 }
 
 data class CarouselSlide(
-    val icon: ImageVector,
+    val imageResId: Int,
     val title: String,
     val description: String
 )
@@ -143,22 +142,16 @@ fun CarouselSlideContent(slide: CarouselSlide) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Icon wrapped in a beautifully padded secondary container circle
-        Box(
+        // High-quality illustration for onboarding
+        Image(
+            painter = painterResource(id = slide.imageResId),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
             modifier = Modifier
-                .size(130.dp)
-                .clip(CircleShape)
-                .background(SecondaryContainer)
-                .padding(28.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = slide.icon,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                tint = Secondary
-            )
-        }
+                .fillMaxWidth()
+                .height(240.dp)
+                .padding(horizontal = 24.dp)
+        )
 
         Spacer(modifier = Modifier.height(36.dp))
 

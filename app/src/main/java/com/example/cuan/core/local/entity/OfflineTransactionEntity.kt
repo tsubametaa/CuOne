@@ -3,9 +3,7 @@ package com.example.cuan.core.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-/**
- * Entity for offline transaction queue
- */
+// Entity for offline transaction queue
 @Entity(tableName = "transaction_queue")
 data class OfflineTransactionEntity(
     @PrimaryKey

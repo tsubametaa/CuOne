@@ -32,9 +32,11 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Modifier
@@ -58,6 +60,7 @@ fun SettingsScreen(
     onNavigateToProfile: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -109,18 +112,39 @@ fun SettingsScreen(
                         icon = Icons.Default.Share,
                         title = "Bagikan Ringkasan",
                         subtitle = "Buat dan bagikan kartu ringkasan bulanan",
-                        onClick = { /* TODO: Share summary */ }
+                        onClick = {
+                            viewModel.shareSummary(
+                                context = context,
+                                onShareReady = { uri ->
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "image/png"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "Bagikan Ringkasan Keuangan"))
+                                },
+                                onError = { message ->
+                                    android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
+                                }
+                            )
+                        }
                     )
                 }
             }
 
             // About Section
             item {
+                val versionName = try {
+                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                    packageInfo.versionName ?: "1.1.4"
+                } catch (e: Exception) {
+                    "1.1.4"
+                }
                 SettingsSection(title = "Tentang") {
                     SettingsItem(
                         icon = Icons.Default.Info,
                         title = "Tentang CuOne",
-                        subtitle = "Versi 1.0.0",
+                        subtitle = "Versi $versionName",
                         onClick = { }
                     )
                     SettingsItem(

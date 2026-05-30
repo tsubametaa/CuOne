@@ -9,7 +9,7 @@ import com.example.cuan.core.local.dao.TransactionQueueDao
 import com.example.cuan.core.local.entity.OfflineTransactionEntity
 import com.example.cuan.core.local.entity.SavingsGoalEntity
 
-//Room Database for CuOne app //
+// Room Database for CuOne app 
 @Database(
     entities = [
         OfflineTransactionEntity::class,

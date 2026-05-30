@@ -29,9 +29,7 @@ enum class TransactionSource {
     FREE_TEXT
 }
 
-/**
- * Transaction categories
- */
+// Transaction categories
 object TransactionCategories {
     val expenseCategories = listOf(
         "Makan",

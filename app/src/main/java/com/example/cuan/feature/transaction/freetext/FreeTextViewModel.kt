@@ -25,14 +25,30 @@ data class ParsedTransactionData(
     val type: TransactionType = TransactionType.EXPENSE,
     val category: String = "",
     val note: String = "",
-    val date: LocalDate = LocalDate.now()
-)
+    val dateText: String = com.example.cuan.core.utils.DateUtils.todayFormatted(),
+    val dateMillis: Long = System.currentTimeMillis(),
+    val hour: Int = java.time.LocalTime.now().hour,
+    val minute: Int = java.time.LocalTime.now().minute,
+    val timeText: String = formatTime(java.time.LocalTime.now().hour, java.time.LocalTime.now().minute)
+) {
+    companion object {
+        fun formatTime(hour: Int, minute: Int): String {
+            val amPm = if (hour < 12) "AM" else "PM"
+            val displayHour = when {
+                hour == 0 -> 12
+                hour > 12 -> hour - 12
+                else -> hour
+            }
+            return String.format(java.util.Locale.US, "%02d:%02d %s", displayHour, minute, amPm)
+        }
+    }
+}
 
 data class FreeTextUiState(
     val inputText: String = "",
     val isProcessing: Boolean = false,
     val parsedData: ParsedTransactionData? = null,
-    val showResultSheet: Boolean = false,
+    val showResultSheet: Boolean = false, // True means show the full-screen confirmation view
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
     val errorMessage: String? = null
@@ -66,15 +82,20 @@ class FreeTextViewModel @Inject constructor(
                 
                 parseResult.fold(
                     onSuccess = { parsed ->
+                        val dateMillis = parsed.date.atStartOfDay(java.time.ZoneId.systemDefault())
+                            .toInstant()
+                            .toEpochMilli()
+                        
                         _uiState.update {
                             it.copy(
                                 isProcessing = false,
                                 parsedData = ParsedTransactionData(
-                                    amount = parsed.amount.toString(),
+                                    amount = if (parsed.amount == 0L) "" else parsed.amount.toString(),
                                     type = parsed.type,
                                     category = parsed.category,
                                     note = parsed.note,
-                                    date = parsed.date
+                                    dateText = com.example.cuan.core.utils.DateUtils.formatDate(parsed.date),
+                                    dateMillis = dateMillis
                                 ),
                                 showResultSheet = true
                             )
@@ -120,6 +141,37 @@ class FreeTextViewModel @Inject constructor(
         }
     }
 
+    fun updateParsedDate(millis: Long) {
+        val date = java.time.Instant.ofEpochMilli(millis)
+            .atZone(java.time.ZoneId.systemDefault())
+            .toLocalDate()
+        
+        _uiState.update { state ->
+            state.copy(
+                parsedData = state.parsedData?.copy(
+                    dateMillis = millis,
+                    dateText = com.example.cuan.core.utils.DateUtils.formatDate(date)
+                )
+            )
+        }
+    }
+
+    fun updateParsedTime(hour: Int, minute: Int) {
+        _uiState.update { state ->
+            state.copy(
+                parsedData = state.parsedData?.copy(
+                    hour = hour,
+                    minute = minute,
+                    timeText = ParsedTransactionData.formatTime(hour, minute)
+                )
+            )
+        }
+    }
+
+    fun goBackToInput() {
+        _uiState.update { it.copy(showResultSheet = false) }
+    }
+
     fun dismissResultSheet() {
         _uiState.update { it.copy(showResultSheet = false) }
     }
@@ -141,14 +193,23 @@ class FreeTextViewModel @Inject constructor(
             _uiState.update { it.copy(isSaving = true) }
 
             try {
+                val date = java.time.Instant.ofEpochMilli(parsed.dateMillis)
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDate()
+
+                val combinedTimeMillis = date.atTime(parsed.hour, parsed.minute)
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+
                 val transaction = Transaction(
                     id = UUID.randomUUID().toString(),
                     amount = parsed.amount.toLongOrNull() ?: 0L,
                     type = parsed.type,
                     category = parsed.category,
                     note = parsed.note,
-                    date = parsed.date,
-                    timeMillis = System.currentTimeMillis(),
+                    date = date,
+                    timeMillis = combinedTimeMillis,
                     source = TransactionSource.FREE_TEXT,
                     isSynced = false
                 )

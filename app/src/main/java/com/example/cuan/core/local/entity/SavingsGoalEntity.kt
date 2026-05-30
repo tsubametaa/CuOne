@@ -3,9 +3,7 @@ package com.example.cuan.core.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-/**
- * Entity for savings goals
- */
+// Entity for savings goals
 @Entity(tableName = "savings_goals")
 data class SavingsGoalEntity(
     @PrimaryKey

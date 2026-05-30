@@ -17,9 +17,7 @@ import com.example.cuan.ui.theme.OnSecondary
 import com.example.cuan.ui.theme.Secondary
 import java.time.YearMonth
 
-/**
- * Modern, flat month selection component.
- */
+// Modern, flat month selection component 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MonthSelectorComponent(
@@ -37,7 +35,12 @@ fun MonthSelectorComponent(
             FilterChip(
                 selected = isSelected,
                 onClick = { onMonthSelected(month) },
-                label = { Text(DateUtils.formatShortMonth(month)) },
+                label = { 
+                    Text(
+                        text = DateUtils.formatShortMonth(month),
+                        color = if (isSelected) OnSecondary else OnBackground
+                    ) 
+                },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Secondary,
                     selectedLabelColor = OnSecondary,
