@@ -171,7 +171,3 @@ Untuk pertanyaan teknis dan kontribusi lebih lanjut, buka issue di repository at
 
 - GitHub: [tsubametaa](https://github.com/tsubametaa) - Alvin Putra
 - GitHub: [Rasen22](https://github.com/Rasen22) - Farhan Rasendriya
-
----
-
-File utama yang relevan: [AGENTS.md](AGENTS.md), [app/build.gradle.kts](app/build.gradle.kts), [settings.gradle.kts](settings.gradle.kts)
