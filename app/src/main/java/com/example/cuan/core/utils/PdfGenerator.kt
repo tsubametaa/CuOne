@@ -13,9 +13,8 @@ import java.io.File
 import java.io.FileOutputStream
 import java.time.format.DateTimeFormatter
 
-/**
- * Utility to export transactions to a PDF file in the Downloads folder.
- */
+// Utility to export transactions to a PDF file in the Downloads folder.
+ 
 object PdfGenerator {
 
     fun export(context: Context, transactions: List<Transaction>) {

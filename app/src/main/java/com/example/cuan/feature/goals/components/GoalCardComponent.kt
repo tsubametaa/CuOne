@@ -42,15 +42,16 @@ import com.example.cuan.ui.theme.OnBackground
 import com.example.cuan.ui.theme.Secondary
 import com.example.cuan.ui.theme.SurfaceError
 import com.example.cuan.ui.theme.TextSecondary
+import com.example.cuan.ui.components.PrimaryButtonComponent
 
-/**
- * Minimalist and professional savings goal item card.
- */
+// Minimalist and professional savings goal item card.
+
 @Composable
 fun GoalCardComponent(
     goal: SavingsGoal,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onDepositClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val progressPercent = (goal.progress * 100).toInt()
@@ -201,6 +202,15 @@ fun GoalCardComponent(
                         color = Accent
                     )
                 }
+            }
+
+            if (!isCompleted) {
+                Spacer(modifier = Modifier.height(16.dp))
+                PrimaryButtonComponent(
+                    text = "Menabung",
+                    onClick = onDepositClick,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

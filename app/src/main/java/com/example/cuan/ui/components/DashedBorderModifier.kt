@@ -14,9 +14,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.unit.Dp
 
-/**
- * Extension modifier to draw a dashed border around compose elements.
- */
+// Extension modifier to draw a dashed border around compose elements.
+
 fun Modifier.dashedBorder(
     color: Color,
     strokeWidth: Dp,

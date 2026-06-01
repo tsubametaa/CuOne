@@ -13,9 +13,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-/**
- * CuOne Application class with Hilt
- */
+// CuOne Application class with Hilt
+
 @HiltAndroidApp
 class CuOneApplication : Application() {
     

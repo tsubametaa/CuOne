@@ -7,18 +7,21 @@ package com.example.cuan.core.utils
 object OcrTextHolder {
     private var _ocrText: String = ""
 
-    /** Store OCR text before navigating to ScanResultScreen */
+    // Store OCR text before navigating to ScanResultScreen
+    
     fun set(text: String) {
         _ocrText = text
     }
 
-    /** Read and clear the stored OCR text */
+    // Read and clear the stored OCR text
+    
     fun getAndClear(): String {
         val value = _ocrText
         _ocrText = ""
         return value
     }
 
-    /** Peek without clearing */
+    // Peek without clearing
+    
     fun peek(): String = _ocrText
 }

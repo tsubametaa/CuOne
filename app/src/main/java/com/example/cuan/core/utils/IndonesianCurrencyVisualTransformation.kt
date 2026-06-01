@@ -5,10 +5,9 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 
-/**
- * Visual transformation to format a number input string with Indonesian thousands separators (dot).
- * The input must be digits-only (e.g. "1000000"). The output will display as "1.000.000".
- */
+// Visual transformation to format a number input string with Indonesian thousands separators (dot).
+// The input must be digits-only (e.g. "1000000"). The output will display as "1.000.000".
+
 class IndonesianCurrencyVisualTransformation : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
         val originalText = text.text

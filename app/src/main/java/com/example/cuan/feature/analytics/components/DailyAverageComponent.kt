@@ -28,9 +28,8 @@ import com.example.cuan.ui.theme.OnBackground
 import com.example.cuan.ui.theme.Secondary
 import com.example.cuan.ui.theme.TextSecondary
 
-/**
- * Minimalist component showing daily average and end-of-month financial projections.
- */
+// Minimalist component showing daily average and end-of-month financial projections.
+ 
 @Composable
 fun DailyAverageComponent(
     dailyAverage: Long,

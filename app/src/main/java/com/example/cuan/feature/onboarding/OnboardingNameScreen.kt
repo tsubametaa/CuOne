@@ -45,9 +45,7 @@ import com.example.cuan.ui.theme.OnBackground
 import com.example.cuan.ui.theme.Secondary
 import com.example.cuan.ui.theme.TextSecondary
 
-/**
- * Onboarding - Input user name (F-01 Tahap 2)
- */
+//Onboarding - Input user name (F-01 Tahap 2)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingNameScreen(

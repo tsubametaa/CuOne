@@ -2,9 +2,8 @@ package com.example.cuan.data.model
 
 import java.time.YearMonth
 
-/**
- * Monthly financial insight data
- */
+// Monthly financial insight data
+
 data class MonthlyInsight(
     val month: YearMonth,
     val totalIncome: Long,
@@ -16,18 +15,16 @@ data class MonthlyInsight(
     val comparedToPrevMonth: Float
 )
 
-/**
- * Category spending summary
- */
+// Category spending summary
+ 
 data class CategorySummary(
     val category: String,
     val amount: Long,
     val percentage: Float
 )
 
-/**
- * Anomaly alert for unusual spending
- */
+// Anomaly alert for unusual spending
+ 
 data class AnomalyAlert(
     val category: String,
     val currentMonthAmount: Long,

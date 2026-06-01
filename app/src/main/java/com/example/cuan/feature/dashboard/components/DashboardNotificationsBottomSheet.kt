@@ -38,9 +38,8 @@ import com.example.cuan.ui.theme.Secondary
 import com.example.cuan.ui.theme.TextSecondary
 import com.example.cuan.ui.theme.Accent
 
-/**
- * Data class representing a local notifications item
- */
+// Data class representing a local notifications item
+ 
 data class LocalNotificationItem(
     val title: String,
     val description: String,
@@ -49,9 +48,8 @@ data class LocalNotificationItem(
     val time: String
 )
 
-/**
- * Bottom sheet content that lists dynamic system and status notifications
- */
+// Bottom sheet content that lists dynamic system and status notifications
+ 
 @Composable
 fun DashboardNotificationsBottomSheet(
     sheetsUrl: String,

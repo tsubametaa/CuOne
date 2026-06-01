@@ -8,9 +8,8 @@ import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
-/**
- * Date utility functions
- */
+// Date utility functions
+
 object DateUtils {
     private val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
         .withLocale(Locale("id", "ID"))

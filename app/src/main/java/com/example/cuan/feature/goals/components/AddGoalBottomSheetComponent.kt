@@ -43,9 +43,8 @@ import com.example.cuan.ui.theme.TextSecondary
 import java.time.LocalDate
 import java.util.Calendar
 
-/**
- * Bottom sheet component for adding a new saving target/goal.
- */
+// Bottom sheet component for adding a new saving target/goal.
+
 @Composable
 fun AddGoalBottomSheetComponent(
     onSave: (String, Long, Long, LocalDate?) -> Unit,

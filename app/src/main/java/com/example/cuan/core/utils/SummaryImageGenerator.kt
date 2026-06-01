@@ -16,10 +16,9 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/**
- * Utility to generate a beautiful, shareable summary card image representing
- * the user's monthly financial report.
- */
+// Utility to generate a beautiful, shareable summary card image representing
+// the user's monthly financial report.
+ 
 object SummaryImageGenerator {
 
     fun generateAndGetUri(context: Context, transactions: List<Transaction>): Uri? {

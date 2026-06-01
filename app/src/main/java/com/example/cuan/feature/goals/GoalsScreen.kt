@@ -34,8 +34,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.cuan.data.model.SavingsGoal
 import com.example.cuan.feature.goals.components.AddGoalBottomSheetComponent
 import com.example.cuan.feature.goals.components.GoalCardComponent
+import com.example.cuan.feature.goals.components.DepositGoalBottomSheetComponent
 import com.example.cuan.ui.components.EmptyStateComponent
 import com.example.cuan.ui.theme.Accent
 import com.example.cuan.ui.theme.OnAccent
@@ -54,6 +56,8 @@ fun GoalsScreen(
     val uiState by viewModel.uiState.collectAsState()
     var showAddSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+    var selectedGoalForDeposit by remember { mutableStateOf<SavingsGoal?>(null) }
+    val depositSheetState = rememberModalBottomSheetState()
 
     Scaffold(
         topBar = {
@@ -108,7 +112,8 @@ fun GoalsScreen(
                     GoalCardComponent(
                         goal = goal,
                         onEdit = { /* TODO */ },
-                        onDelete = { viewModel.deleteGoal(goal.id) }
+                        onDelete = { viewModel.deleteGoal(goal.id) },
+                        onDepositClick = { selectedGoalForDeposit = goal }
                     )
                 }
             }
@@ -128,6 +133,25 @@ fun GoalsScreen(
                     showAddSheet = false
                 },
                 onCancel = { showAddSheet = false }
+            )
+        }
+    }
+
+    // Deposit Goal Bottom Sheet
+    if (selectedGoalForDeposit != null) {
+        ModalBottomSheet(
+            onDismissRequest = { selectedGoalForDeposit = null },
+            sheetState = depositSheetState,
+            containerColor = Background
+        ) {
+            DepositGoalBottomSheetComponent(
+                goal = selectedGoalForDeposit!!,
+                onSave = { amount, date ->
+                    val currentAmount = selectedGoalForDeposit!!.currentAmount
+                    viewModel.updateGoalProgress(selectedGoalForDeposit!!.id, currentAmount + amount)
+                    selectedGoalForDeposit = null
+                },
+                onCancel = { selectedGoalForDeposit = null }
             )
         }
     }
